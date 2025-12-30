@@ -94,7 +94,29 @@ export function header({ onNavigate, onAuthSuccess } : HeaderProps){
                     <span className="text-xl">AlgoFinance</span>
                 </div>
 
-                
+                {/* Desktop Navigation */}
+                {/* hidden md:flex: 
+                    - Mobile: Hidden (display: none).
+                    - Desktop: Visible (display: flex) to show links horizontally. 
+                */}
+                <nav className="hidden md:flex items-center gap-6">
+                <button onClick={() => handleNavClick('about')} className="text-gray-600 hover:text-gray-900 transition-colors">
+                    About
+                </button>
+                </nav>
+
+                {/* === DESKTOP AUTH BUTTONS === */}
+                {/* Separated from nav links for visual grouping on the right side */}
+                {/* The button logic will be implemented in a seperate file called button and imported*/}
+                <div className="hidden md:flex items-center gap-3">
+
+                {/* Sign In: Secondary Action (Ghost/Transparent style) */}
+                <Button variant="ghost" onClick={() => handleAuthClick("login")}>Sign In</Button>
+
+                {/* Sign Up: Primary Action (Default/Filled style) */}
+                <Button onClick={() => handleAuthClick("signup")}>Sign Up</Button>
+                </div>
+
 
             </div>
         </header>
