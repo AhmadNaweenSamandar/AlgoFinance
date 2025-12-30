@@ -1,6 +1,7 @@
 import { Button } from "./ui/Button";
 import { Menu } from "lucide-react";
 import { useState } from "react";
+import { AuthDialog } from "./AuthDialog";
 
 
 //header interface created
@@ -162,7 +163,7 @@ export function header({ onNavigate, onAuthSuccess } : HeaderProps){
                 to share state easily. 
             */}
             {/*These handlers will be implemented in AuthDialog file seperately*/}
-            <AuthDialog 
+            <AuthDialog
                 open={authDialogOpen}                    // Controls visibility based on parent state
                 onOpenChange={setAuthDialogOpen}         // Allows the modal to close itself (e.g., clicking backdrop)
                 defaultTab={authMode}                    // Sets initial view to "login" or "signup"
