@@ -117,8 +117,58 @@ export function header({ onNavigate, onAuthSuccess } : HeaderProps){
                 <Button onClick={() => handleAuthClick("signup")}>Sign Up</Button>
                 </div>
 
-
+                {/* Mobile Menu Button */}
+                {/*Sets mobile menu to visible*/}
+                <button
+                className="md:hidden p-2"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                <Menu className="w-6 h-6" />
+                </button>
             </div>
+
+            {/* Mobile Menu */}
+            {/* === MOBILE MENU DROPDOWN === */}
+            {/* Conditional Rendering: Only renders if 'mobileMenuOpen' state is true */}
+            {mobileMenuOpen && (
+                <div className="md:hidden border-t bg-white">
+
+                {/* Container:
+                    - md:hidden: CRITICAL. Ensures this menu vanishes if user resizes to desktop width.
+                    - border-t: Adds visual separation from the main header bar.
+                */}
+                <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+                    {/* Navigation Links (Vertical Stack) */}
+                    <button onClick={() => handleNavClick('about')} className="text-gray-600 hover:text-gray-900 text-left">
+                    About
+                    </button>
+
+                    {/* Mobile Auth Actions */}
+                    {/* Unlike desktop where these are buttons, here they are styled as simple links for consistency */}
+                    <button onClick={() => handleAuthClick("login")} className="text-gray-600 hover:text-gray-900 text-left">
+                    Sign In
+                    </button>
+                    <button onClick={() => handleAuthClick("signup")} className="text-gray-600 hover:text-gray-900 text-left">
+                    Sign Up
+                    </button>
+                </nav>
+                </div>
+            )}
+            
+
+            {/* === AUTHENTICATION MODAL === */}
+            {/* Renders the popup dialog for Login/Signup.
+                It exists outside the nav flow but inside the Header component 
+                to share state easily. 
+            */}
+            {/*These handlers will be implemented in AuthDialog file seperately*/}
+            <AuthDialog 
+                open={authDialogOpen}                    // Controls visibility based on parent state
+                onOpenChange={setAuthDialogOpen}         // Allows the modal to close itself (e.g., clicking backdrop)
+                defaultTab={authMode}                    // Sets initial view to "login" or "signup"
+                onAuthComplete={handleAuthComplete}      // Callback triggered after successful login
+            />
+
         </header>
     )
 }
