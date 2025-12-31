@@ -64,6 +64,43 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
     }
   };
 
+
+  // =========================================
+  // HANDLERS: FILE UPLOAD (DRAG & DROP)
+  // =========================================
+
+
+  /**
+   * Unified handler for both Drag-and-Drop AND Click-to-Upload.
+   * Intercepts the file and forces the user to Sign Up.
+   */
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false); // Reset visual state
+    
+    // File Extraction Logic:
+    // 1. Check 'dataTransfer' (Drag event)
+    // 2. Check 'target.files' (Input change event)
+    let file: File | null = null;
+    if ('dataTransfer' in e) {
+      file = e.dataTransfer.files[0];
+    } else if (e.target.files) {
+      file = e.target.files[0];
+    }
+
+
+    // Business Logic:
+    if (file) {
+      setPendingFile(file);  // Save file to memory
+
+      // Force the Authentication Flow
+      // We default to "signup" assuming a new user trying the demo.
+      // Show auth dialog before proceeding
+      setAuthMode("signup");
+      setAuthDialogOpen(true);
+    }
+  };
+
   
 
     return (
