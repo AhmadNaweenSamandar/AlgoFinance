@@ -13,6 +13,25 @@ interface HeroProps {
 
 export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
 
+  // =========================================
+  // STATE: INTERACTION & DATA
+  // =========================================
+
+
+  // Visual state for the Drag-and-Drop zone (true = user is hovering file over area)
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Controls the visibility of the Auth Modal
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+
+  
+  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+  // CRITICAL: Stores the uploaded bank statement temporarily.
+  // This allows the user to drop a file -> Sign Up -> Then have the file ready 
+  // on the dashboard immediately after login.
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+
+  
 
     return (
     <section className="container mx-auto px-4 py-16 md:py-24">
