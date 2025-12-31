@@ -31,6 +31,39 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
   // on the dashboard immediately after login.
   const [pendingFile, setPendingFile] = useState<File | null>(null);
 
+
+  // =========================================
+  // HANDLERS: AUTHENTICATION
+  // =========================================
+
+
+  /**
+   * Opens the modal to a specific tab (Login or Signup).
+   */
+  const handleAuthClick = (mode: "login" | "signup") => {
+    setAuthMode(mode);
+    setAuthDialogOpen(true);
+  };
+
+  /**
+   * Callback triggered after successful Login/Signup.
+   * Handles the transition from Landing Page -> Dashboard.
+   */
+
+  const handleAuthComplete = () => {
+    setAuthDialogOpen(false);
+    if (onAuthSuccess) {
+      onAuthSuccess();
+    }
+    // Notify parent component (usually to update global user state)
+    // while there's a pending file, navigate to dashboard
+    if (pendingFile && onNavigate) {
+      setTimeout(() => {
+        onNavigate('dashboard');
+      }, 500);
+    }
+  };
+
   
 
     return (
