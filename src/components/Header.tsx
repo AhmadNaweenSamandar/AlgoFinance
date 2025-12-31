@@ -1,4 +1,4 @@
-import { Button } from "./ui/Button";
+import { Button } from "./ui/button";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import { AuthDialog } from "./AuthDialog";
