@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
-import './App.css'
+// import './App.css'
+// the App.css file is commented out form this branch's snippet to allow the build to run
 
 function App() {
   const [count, setCount] = useState(0)
