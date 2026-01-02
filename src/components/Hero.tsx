@@ -106,7 +106,7 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
   /**
    * Visual feedback when dragging enters the zone.
    */
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault(); // Necessary to allow dropping
     setIsDragging(true);
   };
