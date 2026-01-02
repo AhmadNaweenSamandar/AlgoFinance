@@ -74,7 +74,7 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
    * Unified handler for both Drag-and-Drop AND Click-to-Upload.
    * Intercepts the file and forces the user to Sign Up.
    */
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     setIsDragging(false); // Reset visual state
     
@@ -106,7 +106,7 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
   /**
    * Visual feedback when dragging enters the zone.
    */
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault(); // Necessary to allow dropping
     setIsDragging(true);
   };
