@@ -32,7 +32,8 @@ By uploading or connecting banking exports, users receive automatic transaction 
 
 ## System Design Architecture
 
-![Alt System Design Architecture for AlgoFinance] (product_design/System_Design_Archecture.PNG)
+![System Design Architecture for AlgoFinance](product_design/SDA.PNG)
+
 
 
 ## 🎨 Figma UI/UX Design
