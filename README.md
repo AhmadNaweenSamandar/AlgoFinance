@@ -7,7 +7,7 @@ By uploading or connecting banking exports, users receive automatic transaction 
 
 ## 🔮 Features
 
-- **📥 Upload or Connect Bank Exports**  
+- **📥 Upload Bank Exports**  
   Supports CSV, XLSX, and other standard banking formats.
 
 - **🤖 ML-Powered Categorization**  
@@ -29,6 +29,11 @@ By uploading or connecting banking exports, users receive automatic transaction 
   Project maintained using **Git + GitHub** with branching strategies and clean documentation.
 
 ---
+
+## System Design Architecture
+
+![Alt System Design Architecture for AlgoFinance] (product_design/System_Design_Archecture.PNG)
+
 
 ## 🎨 Figma UI/UX Design
 
