@@ -61,10 +61,10 @@ export function CTA({ onAuthSuccess }: CTAProps = {}) {
           {/* relative z-10: Lifts content above the background blobs */}
           <div className="relative z-10">
             <h2 className="text-white mb-4">
-              Ready to Master Your Finances?
+              Ready to Understand Your Finances?
             </h2>
             <p className="text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of users who are already saving more and spending smarter.
+              AlgoFinance helps you save more and spend smarter.
             </p>
             
 
@@ -77,7 +77,7 @@ export function CTA({ onAuthSuccess }: CTAProps = {}) {
             </div>
             {/* Trust Signals / Footer Text */}
             <p className="text-sm text-emerald-100 mt-6">
-              No credit card required • Your data stays private
+              AlgoFinance • A personal project implementing ML/AI by Ahmad Naween Samandar
             </p>
           </div>
         </div>
