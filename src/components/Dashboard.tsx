@@ -9,6 +9,7 @@ import {
   PiggyBank,
 } from "lucide-react";
 import { Card, CardContent } from "./ui/card";
+import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
 //mock data for dashboard cards
 const monthlyStats = {
@@ -119,6 +120,25 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Main Content */}
+        {/* Dashboard tabs main layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              {/* three main tabs appearing in the main slider bar*/}
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="transactions">Transactions</TabsTrigger>
+                <TabsTrigger value="insights">Insights</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       </div>
     </div>
