@@ -1,107 +1,59 @@
 import { Button } from "./ui/button";
 import { Upload, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { AuthDialog } from "./AuthDialog";
-
+import { toast } from "sonner";
 
 //interface for second part of the main page
 //it control page navigation
 interface HeroProps {
   onNavigate?: (page: string) => void;
-  onAuthSuccess?: () => void;
 }
 
-export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
-
+export function Hero({ onNavigate }: HeroProps = {}) {
   // =========================================
   // STATE: INTERACTION & DATA
   // =========================================
 
-
   // Visual state for the Drag-and-Drop zone (true = user is hovering file over area)
   const [isDragging, setIsDragging] = useState(false);
-
-  // Controls the visibility of the Auth Modal
-  const [authDialogOpen, setAuthDialogOpen] = useState(false);
-
-  
-  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
-  // CRITICAL: Stores the uploaded bank statement temporarily.
-  // This allows the user to drop a file -> Sign Up -> Then have the file ready 
-  // on the dashboard immediately after login.
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-
-
-  // =========================================
-  // HANDLERS: AUTHENTICATION
-  // =========================================
-
-
-  /**
-   * Opens the modal to a specific tab (Login or Signup).
-   */
-  const handleAuthClick = (mode: "login" | "signup") => {
-    setAuthMode(mode);
-    setAuthDialogOpen(true);
-  };
-
-  /**
-   * Callback triggered after successful Login/Signup.
-   * Handles the transition from Landing Page -> Dashboard.
-   */
-
-  const handleAuthComplete = () => {
-    setAuthDialogOpen(false);
-    if (onAuthSuccess) {
-      onAuthSuccess();
-    }
-    // Notify parent component (usually to update global user state)
-    // while there's a pending file, navigate to dashboard
-    if (pendingFile && onNavigate) {
-      setTimeout(() => {
-        onNavigate('dashboard');
-      }, 500);
-    }
-  };
-
 
   // =========================================
   // HANDLERS: FILE UPLOAD (DRAG & DROP)
   // =========================================
 
-
   /**
    * Unified handler for both Drag-and-Drop AND Click-to-Upload.
    * Intercepts the file and forces the user to Sign Up.
    */
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLLabelElement>) => {
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLLabelElement>,
+  ) => {
     e.preventDefault();
     setIsDragging(false); // Reset visual state
-    
+
     // File Extraction Logic:
     // 1. Check 'dataTransfer' (Drag event)
     // 2. Check 'target.files' (Input change event)
     let file: File | null = null;
-    if ('dataTransfer' in e) {
+    if ("dataTransfer" in e) {
       file = e.dataTransfer.files[0];
     } else if (e.target.files) {
       file = e.target.files[0];
     }
 
-
     // Business Logic:
     if (file) {
-      setPendingFile(file);  // Save file to memory
+      //show success message
+      toast.success(`Processing ${file.name}...`);
 
-      // Force the Authentication Flow
-      // We default to "signup" assuming a new user trying the demo.
-      // Show auth dialog before proceeding
-      setAuthMode("signup");
-      setAuthDialogOpen(true);
+      // Navigate to dashboard
+      if (onNavigate) {
+        setTimeout(() => {
+          onNavigate("dashboard");
+        }, 500);
+      }
     }
   };
-
-
 
   /**
    * Visual feedback when dragging enters the zone.
@@ -111,7 +63,6 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
     setIsDragging(true);
   };
 
-
   /**
    * Reset visual feedback when dragging leaves.
    */
@@ -119,9 +70,14 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
     setIsDragging(false);
   };
 
-  
+  const handleGetStarted = () => {
+    // Scroll to the upload section
+    document
+      .getElementById("file-upload-section")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
 
-    return (
+  return (
     <section className="container mx-auto px-4 py-16 md:py-24">
       <div className="max-w-4xl mx-auto text-center">
         {/* === PILL BADGE === */}
@@ -130,7 +86,6 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
           <Sparkles className="w-4 h-4" />
           <span className="text-sm">ML-Powered Financial Intelligence</span>
         </div>
-        
 
         {/* === MAIN HEADLINE === */}
         <h1 className="mb-6">
@@ -146,25 +101,22 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
         </h1>
         {/* Subheadline */}
         <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Upload your bank transactions and let our machine learning algorithms automatically categorize spending, 
-          track savings, and provide personalized financial advice.
+          Upload your bank transactions and let our machine learning algorithms
+          automatically categorize spending, track savings, and provide
+          personalized financial advice.
         </p>
-        
 
         {/* === CTA BUTTONS === */}
         {/* flex-col sm:flex-row: Vertical stack on mobile, horizontal on desktop */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-          <Button size="lg" className="gap-2" onClick={() => handleAuthClick("signup")}>
+          <Button size="lg" className="gap-2" onClick={handleGetStarted}>
             <Upload className="w-5 h-5" />
             Get Started Free
-          </Button>
-          <Button size="lg" variant="outline" onClick={() => handleAuthClick("login")}>
-            Try Demo
           </Button>
         </div>
 
         {/* === INTERACTIVE DEMO AREA (Drop Zone) === */}
-        <div className="relative mt-12">
+        <div id="file-upload-section" className="relative mt-12">
           {/* Background Glow Effect:
               - absolute inset-0: Fills the container.
               - blur-3xl: Heavily blurs the gradient to create a soft glow.
@@ -176,7 +128,7 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
             {/* The Drop Target 
                 - Using a <label> allows clicking anywhere in the box to trigger the hidden file input.
             */}
-            <label 
+            <label
               htmlFor="file-upload"
               // Drag Events to handle state toggling
               onDragOver={handleDragOver}
@@ -186,8 +138,8 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
               // If dragging file over, turn Green (Emerald).
               // If idle, stay Gray/White with hover effects.
               className={`block border-2 border-dashed rounded-lg p-12 transition-all cursor-pointer ${
-                isDragging 
-                  ? "border-emerald-400 bg-emerald-50" 
+                isDragging
+                  ? "border-emerald-400 bg-emerald-50"
                   : "border-gray-300 bg-gray-50 hover:border-emerald-400 hover:bg-emerald-50/50"
               }`}
             >
@@ -195,13 +147,15 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
               <input
                 id="file-upload"
                 type="file"
-                accept=".csv,.xlsx,.xls,.pdf,.ofx,.qfx"  // Restrict to financial formats
+                accept=".csv,.xlsx,.xls,.pdf,.ofx,.qfx" // Restrict to financial formats
                 onChange={handleFileUpload}
                 className="hidden"
               />
 
               {/* Visual Feedback Icons & Text */}
-              <Upload className={`w-12 h-12 mx-auto mb-4 ${isDragging ? "text-emerald-600" : "text-gray-400"}`} />
+              <Upload
+                className={`w-12 h-12 mx-auto mb-4 ${isDragging ? "text-emerald-600" : "text-gray-400"}`}
+              />
               <p className={isDragging ? "text-emerald-600" : "text-gray-600"}>
                 Drop your bank statement here or click to browse
               </p>
@@ -212,15 +166,6 @@ export function Hero({ onNavigate, onAuthSuccess }: HeroProps = {}) {
           </div>
         </div>
       </div>
-      
-      {/* === AUTH DIALOG === */}
-      {/* Placed here to be available when CTAs are clicked */}
-      <AuthDialog 
-        open={authDialogOpen} 
-        onOpenChange={setAuthDialogOpen}
-        defaultTab={authMode}
-        onAuthComplete={handleAuthComplete}
-      />
     </section>
   );
 }

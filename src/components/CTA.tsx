@@ -1,44 +1,19 @@
 import { Button } from "./ui/button";
 import { ArrowRight } from "lucide-react";
-import { useState } from "react";
-import { AuthDialog } from "./AuthDialog";
 
-
-// Optional props interface for flexibility
-interface CTAProps {
-  onAuthSuccess?: () => void;
-}
-
-export function CTA({ onAuthSuccess }: CTAProps = {}) {
-
-  // =========================================
-  // STATE DEFINITIONS
-  // =========================================
-
-  // Controls visibility of the Sign-Up modal
-  const [authDialogOpen, setAuthDialogOpen] = useState(false);
-
-
+export function CTA() {
   // =========================================
   // HANDLERS
   // =========================================
 
   /**
-   * Primary Action: Opens the modal directly to the registration flow.
+   * Primary Action: Scroll to the upload section on the home page
    */
   const handleStartFree = () => {
-    setAuthDialogOpen(true);
-  };
-
-
-  /**
-   * Success Callback: Closes modal and notifies parent.
-   */
-  const handleAuthComplete = () => {
-    setAuthDialogOpen(false);
-    if (onAuthSuccess) {
-      onAuthSuccess();
-    }
+    // Scroll to the upload section on the home page
+    document
+      .getElementById("file-upload-section")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -55,7 +30,6 @@ export function CTA({ onAuthSuccess }: CTAProps = {}) {
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
           {/* Bottom-Left Blur */}
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-          
 
           {/* --- CONTENT LAYER --- */}
           {/* relative z-10: Lifts content above the background blobs */}
@@ -66,32 +40,27 @@ export function CTA({ onAuthSuccess }: CTAProps = {}) {
             <p className="text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
               AlgoFinance helps you save more and spend smarter.
             </p>
-            
 
             {/* CTA Button */}
             <div className="flex justify-center">
-              <Button size="lg" variant="secondary" className="gap-2" onClick={handleStartFree}> 
+              <Button
+                size="lg"
+                variant="secondary"
+                className="gap-2"
+                onClick={handleStartFree}
+              >
                 Start Free
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </div>
             {/* Trust Signals / Footer Text */}
             <p className="text-sm text-emerald-100 mt-6">
-              AlgoFinance • A personal project implementing ML/AI by Ahmad Naween Samandar
+              AlgoFinance • A personal project implementing ML/AI by Ahmad
+              Naween Samandar
             </p>
           </div>
         </div>
       </div>
-
-
-      {/* === AUTH MODAL === */}
-      {/* Pre-configured to open the Sign-Up tab specifically */}
-      <AuthDialog 
-        open={authDialogOpen} 
-        onOpenChange={setAuthDialogOpen}
-        defaultTab="signup"
-        onAuthComplete={handleAuthComplete}
-      />
     </section>
   );
 }
