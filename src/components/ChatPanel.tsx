@@ -1,6 +1,14 @@
 import { useState } from "react";
-import { Card, CardHeader, CardTitle, CardDescription } from "./ui/card";
-import { Sparkles } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from "./ui/card";
+import { Sparkles, User, Bot } from "lucide-react";
+import { ScrollArea } from "./ui/scroll-area";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 
 //interface for chat panel component
 interface Message {
@@ -109,6 +117,48 @@ export function ChatPanel({ onNavigate }: ChatPanelProps) {
           </div>
         </div>
       </CardHeader>
+
+      {/* Card Content with Messages */}
+      <CardContent className="flex-1 flex flex-col p-0">
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4">
+            {/* Render each message */}
+            {messages.map((message) => (
+              // Individual Message Container
+              <div
+                key={message.id}
+                className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
+              >
+                {/* Avatar for User or Assistant */}
+                <Avatar
+                  className={`w-8 h-8 flex-shrink-0 ${message.role === "assistant" ? "bg-emerald-100" : "bg-gray-100"}`}
+                >
+                  <AvatarFallback>
+                    {message.role === "assistant" ? (
+                      <Bot className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <User className="w-4 h-4 text-gray-600" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+
+                {/* Message Bubble */}
+                <div
+                  className={`flex-1 rounded-lg p-3 ${
+                    message.role === "user"
+                      ? "bg-emerald-600 text-white ml-8"
+                      : "bg-gray-100 text-gray-900 mr-8"
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-line">
+                    {message.content}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </CardContent>
     </Card>
   );
 }
