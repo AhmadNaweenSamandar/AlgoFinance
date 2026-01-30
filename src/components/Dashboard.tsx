@@ -9,6 +9,8 @@ import {
   TrendingUp,
   CreditCard,
   PiggyBank,
+  Sparkles,
+  Calendar,
 } from "lucide-react";
 import {
   Card,
@@ -245,6 +247,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 className="space-y-6 mt-6 transition-opacity duration-300 ease-in-out"
               >
                 {/*this will be connected with InsightsCharts */}
+                {/*Insight section charts will appear here*/}
                 <InsightsCharts categorySpending={categorySpending} />
               </TabsContent>
               <TabsContent
@@ -300,6 +303,88 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     <TransactionsTable transactions={mockTransactions} />
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Insight tab layout */}
+              <TabsContent
+                value="insights"
+                className="space-y-6 mt-6 transition-opacity duration-300 ease-in-out"
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>AI-Powered Insights</CardTitle>
+                    <CardDescription>
+                      Personalized recommendations for your finances
+                    </CardDescription>
+                  </CardHeader>
+                  {/* Insight appears in cards each card having a specific insight information */}
+                  <CardContent className="space-y-4">
+                    <div className="p-4 bg-emerald-50 border-l-4 border-emerald-600 rounded">
+                      <div className="flex items-start gap-3">
+                        <Sparkles className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="text-emerald-900 mb-1">
+                            Great Savings Rate!
+                          </h4>
+                          <p className="text-sm text-emerald-800">
+                            You're saving 61.3% of your income this month.
+                            That's excellent! Keep it up to reach your goals
+                            faster.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-blue-50 border-l-4 border-blue-600 rounded">
+                      <div className="flex items-start gap-3">
+                        <TrendingUp className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="text-blue-900 mb-1">
+                            Shopping Trend Alert
+                          </h4>
+                          <p className="text-sm text-blue-800">
+                            Your shopping spending is up 18% compared to last
+                            month. Consider setting a budget to keep it in
+                            check.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-purple-50 border-l-4 border-purple-600 rounded">
+                      <div className="flex items-start gap-3">
+                        <PiggyBank className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="text-purple-900 mb-1">
+                            Goal Progress
+                          </h4>
+                          <p className="text-sm text-purple-800">
+                            At this rate, you'll reach your emergency fund goal
+                            of $10,000 in just 4 more months!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-amber-50 border-l-4 border-amber-600 rounded">
+                      <div className="flex items-start gap-3">
+                        <Calendar className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="text-amber-900 mb-1">
+                            Subscription Reminder
+                          </h4>
+                          <p className="text-sm text-amber-800">
+                            You have 5 active subscriptions totaling
+                            $67.94/month. Review them to find potential savings.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                {/*this will be connected with InsightsCharts */}
+                {/*Insight section charts will appear here*/}
+                <InsightsCharts categorySpending={categorySpending} detailed />
               </TabsContent>
             </Tabs>
           </div>
