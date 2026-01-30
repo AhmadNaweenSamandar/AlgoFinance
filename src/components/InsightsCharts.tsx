@@ -56,6 +56,7 @@ export function InsightsCharts({
   // For overview - show combined spending visualization
   if (!detailed) {
     return (
+      /* PieChart general layout */
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -80,7 +81,9 @@ export function InsightsCharts({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value: number) => `$${value.toFixed(2)}`}
+                    formatter={(value: number | undefined) =>
+                      value ? `$${value.toFixed(2)}` : "$0.00"
+                    }
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -88,6 +91,8 @@ export function InsightsCharts({
           </CardContent>
         </Card>
 
+        {/* Spending Area showing category with horizonal bar with amount of money*/}
+        {/* Displaying largest spending*/}
         <Card>
           <CardHeader>
             <CardTitle>Spending Areas</CardTitle>
@@ -129,7 +134,11 @@ export function InsightsCharts({
               <XAxis dataKey="name" />
               <YAxis />
               {/*individual bars showing expenses*/}
-              <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+              <Tooltip
+                formatter={(value: number | undefined) =>
+                  value ? `$${value.toFixed(2)}` : "$0.00"
+                }
+              />
               <Bar dataKey="value" fill="#10b981" radius={[8, 8, 0, 0]}>
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />

@@ -137,6 +137,37 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   // handling filtering the dashboard sections: (overview, transaction, insights)
   const [categoryFilter, setCategoryFilter] = useState("all");
 
+  // Calculate category spending from mock transactions
+  const colors = {
+    Groceries: "#10b981",
+    Dining: "#f59e0b",
+    Shopping: "#8b5cf6",
+    Transportation: "#3b82f6",
+    Entertainment: "#ec4899",
+    Health: "#06b6d4",
+    Income: "#10b981",
+  };
+
+  const categorySpending = Object.entries(
+    mockTransactions
+      .filter((t) => t.amount < 0)
+      .reduce(
+        (acc, t) => {
+          acc[t.category] = (acc[t.category] || 0) + Math.abs(t.amount);
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+  ).map(([category, amount]) => {
+    const percentage = (amount / monthlyStats.totalExpenses) * 100;
+    return {
+      category,
+      amount,
+      percentage,
+      color: colors[category as keyof typeof colors] || "#6b7280",
+    };
+  });
+
   //if user click on export report
   const handleExport = () => {
     toast.success("Report exported successfully!");
