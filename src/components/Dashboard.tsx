@@ -28,6 +28,8 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Input } from "./ui/input";
+import { TransactionsTable } from "./TransactionsTable";
+import { InsightsCharts } from "./InsightsCharts";
 
 // Mock data
 const mockTransactions = [
