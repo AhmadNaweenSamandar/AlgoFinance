@@ -23,6 +23,14 @@ const initialMessages: Message[] = [
   },
 ];
 
+//sample questions for user to ask
+const sampleQuestions = [
+  "How can I reduce my spending?",
+  "What's my biggest expense?",
+  "Am I on track for my savings goal?",
+  "Show me dining trends",
+];
+
 //initial messages for chat panel
 export function ChatPanel({ onNavigate }: ChatPanelProps) {
   //state definitions
