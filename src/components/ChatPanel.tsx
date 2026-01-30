@@ -102,7 +102,7 @@ export function ChatPanel({ onNavigate }: ChatPanelProps) {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <CardTitle>AI Assistant</CardTitle>
+            <CardTitle>Gabina</CardTitle>
             <CardDescription>
               Ask me anything about your finances
             </CardDescription>
