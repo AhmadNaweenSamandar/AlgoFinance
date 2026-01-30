@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Card, CardHeader, CardTitle, CardDescription } from "./ui/card";
+import { Sparkles } from "lucide-react";
 
 //interface for chat panel component
 interface Message {
@@ -89,4 +91,24 @@ export function ChatPanel({ onNavigate }: ChatPanelProps) {
 
     return "I've analyzed your question. Based on your current financial data, you're in a strong position with a 61.3% savings rate. Your top spending categories are Shopping (24%), Groceries (22%), and Utilities (16%). Is there a specific area you'd like me to dive deeper into?";
   };
+
+  return (
+    // Chat Panel Card
+    <Card className="h-[600px] lg:sticky lg:top-24 flex flex-col">
+      {/* Card Header with Title and Description */}
+      <CardHeader className="border-b">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-full flex items-center justify-center">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <CardTitle>AI Assistant</CardTitle>
+            <CardDescription>
+              Ask me anything about your finances
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+    </Card>
+  );
 }
