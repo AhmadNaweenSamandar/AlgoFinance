@@ -13,7 +13,10 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  PieChart,
+  Pie,
 } from "recharts";
+import { Progress } from "./ui/progress";
 
 //category variables to store the relavent information
 interface CategorySpending {
@@ -49,6 +52,67 @@ export function InsightsCharts({
     value: item.amount,
     color: COLORS[item.color] || "#6b7280",
   }));
+
+  // For overview - show combined spending visualization
+  if (!detailed) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Spending Distribution</CardTitle>
+            <CardDescription>Breakdown by category</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number) => `$${value.toFixed(2)}`}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Spending Areas</CardTitle>
+            <CardDescription>Your biggest spending areas</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {categorySpending.slice(0, 5).map((category, index) => (
+              <div key={index} className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700">{category.category}</span>
+                  <span className="text-gray-900">
+                    ${category.amount.toFixed(2)}
+                  </span>
+                </div>
+                <Progress value={category.percentage} className="h-2" />
+                <div className="text-xs text-gray-500">
+                  {category.percentage}% of total spending
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // For detailed insights - only show Category Comparison
   return (
