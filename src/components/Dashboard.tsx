@@ -4,12 +4,112 @@ import { Button } from "./ui/button";
 import {
   Download,
   ArrowUpDown,
+  Filter,
+  Search,
   TrendingUp,
   CreditCard,
   PiggyBank,
 } from "lucide-react";
-import { Card, CardContent } from "./ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Input } from "./ui/input";
+
+// Mock data
+const mockTransactions = [
+  {
+    id: 1,
+    date: "2025-11-10",
+    merchant: "Whole Foods",
+    category: "Groceries",
+    amount: -87.43,
+    status: "completed",
+  },
+  {
+    id: 2,
+    date: "2025-11-09",
+    merchant: "Shell Gas Station",
+    category: "Transportation",
+    amount: -52.0,
+    status: "completed",
+  },
+  {
+    id: 3,
+    date: "2025-11-08",
+    merchant: "Netflix",
+    category: "Entertainment",
+    amount: -15.99,
+    status: "completed",
+  },
+  {
+    id: 4,
+    date: "2025-11-08",
+    merchant: "Starbucks",
+    category: "Dining",
+    amount: -6.45,
+    status: "completed",
+  },
+  {
+    id: 5,
+    date: "2025-11-07",
+    merchant: "Salary Deposit",
+    category: "Income",
+    amount: 4500.0,
+    status: "completed",
+  },
+  {
+    id: 6,
+    date: "2025-11-06",
+    merchant: "Amazon",
+    category: "Shopping",
+    amount: -124.99,
+    status: "completed",
+  },
+  {
+    id: 7,
+    date: "2025-11-05",
+    merchant: "Target",
+    category: "Shopping",
+    amount: -67.32,
+    status: "completed",
+  },
+  {
+    id: 8,
+    date: "2025-11-05",
+    merchant: "Chipotle",
+    category: "Dining",
+    amount: -12.5,
+    status: "completed",
+  },
+  {
+    id: 9,
+    date: "2025-11-04",
+    merchant: "LA Fitness",
+    category: "Health",
+    amount: -49.99,
+    status: "completed",
+  },
+  {
+    id: 10,
+    date: "2025-11-03",
+    merchant: "Uber",
+    category: "Transportation",
+    amount: -23.45,
+    status: "completed",
+  },
+];
 
 //mock data for dashboard cards
 const monthlyStats = {
@@ -144,7 +244,62 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 value="overview"
                 className="space-y-6 mt-6 transition-opacity duration-300 ease-in-out"
               >
+                {/*this will be connected with InsightsCharts */}
                 <InsightsCharts categorySpending={categorySpending} />
+              </TabsContent>
+              <TabsContent
+                value="transactions"
+                className="mt-6 transition-opacity duration-300 ease-in-out"
+              >
+                <Card>
+                  <CardHeader>
+                    {/*Transaction tab layout*/}
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                      <div>
+                        <CardTitle>All Transactions</CardTitle>
+                        <CardDescription>
+                          {mockTransactions.length} transactions this month
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        <div className="relative flex-1 sm:flex-initial">
+                          {/*searching specific transactions*/}
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Input
+                            placeholder="Search..."
+                            className="pl-10 w-full sm:w-[200px]"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                        </div>
+
+                        {/* Filter feature allowing for filtering the transactions*/}
+                        <Select
+                          value={categoryFilter}
+                          onValueChange={setCategoryFilter}
+                        >
+                          <SelectTrigger className="w-[130px]">
+                            <Filter className="w-4 h-4 mr-2" />
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Categories</SelectItem>
+                            <SelectItem value="groceries">Groceries</SelectItem>
+                            <SelectItem value="dining">Dining</SelectItem>
+                            <SelectItem value="shopping">Shopping</SelectItem>
+                            <SelectItem value="transportation">
+                              Transportation
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {/*Transaction table is imported here*/}
+                    <TransactionsTable transactions={mockTransactions} />
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </div>
