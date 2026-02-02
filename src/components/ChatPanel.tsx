@@ -156,6 +156,32 @@ export function ChatPanel({ onNavigate }: ChatPanelProps) {
                 </div>
               </div>
             ))}
+            ; //chatbot layout and design
+            {isTyping && (
+              <div className="flex gap-3">
+                <Avatar className="w-8 h-8 flex-shrink-0 bg-emerald-100">
+                  <AvatarFallback>
+                    <Bot className="w-4 h-4 text-emerald-600" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="bg-gray-100 rounded-lg p-3">
+                  <div className="flex gap-1">
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
       </CardContent>
