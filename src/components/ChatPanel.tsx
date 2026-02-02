@@ -44,7 +44,7 @@ const sampleQuestions = [
 ];
 
 //initial messages for chat panel
-export function ChatPanel({ onNavigate }: ChatPanelProps) {
+export function ChatPanel({}: ChatPanelProps) {
   //state definitions
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -163,7 +163,7 @@ export function ChatPanel({ onNavigate }: ChatPanelProps) {
                 </div>
               </div>
             ))}
-            ; //chatbot layout and design
+            {/*chatbot layout and design*/}
             {isTyping && (
               <div className="flex gap-3">
                 <Avatar className="w-8 h-8 flex-shrink-0 bg-emerald-100">
