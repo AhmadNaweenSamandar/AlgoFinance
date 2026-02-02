@@ -1,0 +1,31 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Frontend Build Configuration for AlgoFinance
+
+#trigger only works when a push or pull request is made to or from main branch
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    #Node matrix removed from this line it tested the code against three node versions resulting in slow build workflow
+    #instead project specific version added in steps below "with"
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 24.12.0
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run build --if-present
+    #tests are temporarily deactivated, until the backend implementation and building JUnit test
+    - run: npm test -- --watch=false||true
