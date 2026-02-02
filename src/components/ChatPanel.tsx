@@ -9,6 +9,7 @@ import {
 import { Sparkles, User, Bot } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Button } from "./ui/button";
 
 //interface for chat panel component
 interface Message {
@@ -77,6 +78,11 @@ export function ChatPanel({ onNavigate }: ChatPanelProps) {
       setIsTyping(false);
     }, 1500);
   };
+
+  const handleQuestionClick = (question: string) => {
+    setInput(question);
+  };
+
   //function to generate mock ai response based on user question
   const generateResponse = (question: string): string => {
     const lowerQ = question.toLowerCase();
@@ -184,6 +190,26 @@ export function ChatPanel({ onNavigate }: ChatPanelProps) {
             )}
           </div>
         </ScrollArea>
+
+        {/* Input suggestion area for user  */}
+        {messages.length === 1 && (
+          <div className="p-4 border-t bg-gray-50">
+            <p className="text-xs text-gray-600 mb-2">Try asking:</p>
+            <div className="flex flex-wrap gap-2">
+              {sampleQuestions.map((question, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => handleQuestionClick(question)}
+                >
+                  {question}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
