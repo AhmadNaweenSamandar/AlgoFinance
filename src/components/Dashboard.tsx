@@ -30,6 +30,7 @@ import {
 import { Input } from "./ui/input";
 import { TransactionsTable } from "./TransactionsTable";
 import { InsightsCharts } from "./InsightsCharts";
+import { ChatPanel } from "./ChatPanel";
 
 // Mock data
 const mockTransactions = [
@@ -420,6 +421,11 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 <InsightsCharts categorySpending={categorySpending} detailed />
               </TabsContent>
             </Tabs>
+          </div>
+
+          {/* Chat Sidebar */}
+          <div className="lg:col-span-1">
+            <ChatPanel onNavigate={onNavigate} />
           </div>
         </div>
       </div>
