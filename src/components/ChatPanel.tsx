@@ -6,10 +6,11 @@ import {
   CardContent,
   CardDescription,
 } from "./ui/card";
-import { Sparkles, User, Bot } from "lucide-react";
+import { Sparkles, User, Bot, Send } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
 
 //interface for chat panel component
 interface Message {
@@ -210,6 +211,35 @@ export function ChatPanel({ onNavigate }: ChatPanelProps) {
             </div>
           </div>
         )}
+
+        {/* input area for user to type questions */}
+
+        <div className="p-4 border-t bg-white">
+          <div className="flex gap-2">
+            <Textarea
+              placeholder="Ask about your spending, savings, or goals..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              className="min-h-[60px] resize-none"
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!input.trim() || isTyping}
+              className="self-end"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Press Enter to send, Shift+Enter for new line
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
