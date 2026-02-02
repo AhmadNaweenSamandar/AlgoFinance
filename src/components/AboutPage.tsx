@@ -78,7 +78,7 @@ export function AboutPage() {
                 </Avatar>
                 <h4 className="mb-1">Ahmad Naween Samandar</h4>
                 <p className="text-sm text-emerald-600 mb-3">
-                  Founder & Product Engineer
+                  Product Engineer
                 </p>
                 <p className="text-sm text-gray-600">
                   Software Engineering Student at University of Ottawa
