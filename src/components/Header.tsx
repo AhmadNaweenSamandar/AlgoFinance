@@ -13,7 +13,7 @@ interface HeaderProps {
  * * The main navigation bar for the landing page.
  * * Handles navigation, mobile menu toggling, and opening the Auth Modal.
  */
-export function header({ onNavigate }: HeaderProps) {
+export function Header({ onNavigate }: HeaderProps) {
   // =========================================
   // State Definitions
   // =========================================
