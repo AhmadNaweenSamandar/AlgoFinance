@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import { Hero } from "./components/Hero";
+import { Features } from "./components/Features";
+import { CTA } from "./components/CTA";
+import { Footer } from "./components/Footer";
+import { AboutPage } from "./components/AboutPage";
+import { Dashboard } from "./components/Dashboard";
+import { Toaster } from "./components/ui/sonner";
+import { Header } from "./components/Header";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [currentPage, setCurrentPage] = useState("home");
+
+  const handleNavigate = (page: string) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case "about":
+        return <AboutPage />;
+      case "dashboard":
+        return <Dashboard onNavigate={handleNavigate} />;
+      default:
+        return (
+          <main>
+            <Hero onNavigate={handleNavigate} />
+            <Features />
+            <CTA />
+          </main>
+        );
+    }
+  };
+
+  const showHeaderFooter = currentPage !== "dashboard";
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="min-h-screen bg-white">
+      {showHeaderFooter && <Header onNavigate={handleNavigate} />}
+      {renderPage()}
+      {showHeaderFooter && <Footer onNavigate={handleNavigate} />}
+      <Toaster />
+    </div>
+  );
 }
-
-export default App
