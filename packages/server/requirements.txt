@@ -1,2 +1,8 @@
 fastapi
-pandas
+pandas             # Data manipulation (The backbone of Finance ML)
+uvicorn
+python-multipart   # Required for file uploads
+openpyxl           # For reading Excel files
+pypdf              # For reading PDFs
+scikit-learn       # The ML library
+python-dotenv      # To read .env files
