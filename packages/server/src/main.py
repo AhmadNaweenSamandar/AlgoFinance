@@ -1,31 +1,18 @@
-import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List
-
-# --- Data Models (Schemas) ---
-
-# This defines what a single Fruit object looks like.
-# FastAPI uses this for validation: if we send data without a "name" string, it will error out.
-class Fruit(BaseModel):
-    name: str
-
-
-# This defines the structure of the data returned by the GET endpoint.
-# It expects a dictionary/object containing a list of Fruit objects.
-class Fruits(BaseModel):
-    fruits: List[Fruit]
+# will import routes later
+# from app.api import endpoints
 
 # --- App Initialization ---
-app = FastAPI()
+app = FastAPI(title="AlgoFinance API")
 
 # --- CORS (Cross-Origin Resource Sharing) Configuration ---
 # It tells the server to allow requests 
 # coming from a specific "origin" (in this case, the local frontend at port 5136).
 # Without this, the browser would block the frontend from talking to this API.
 origins = [
-    "http://localhost:5136"
+    "http://localhost:5136",
+    "http://127.0.0.1:5136"
 ]
 
 app.add_middleware(
@@ -45,22 +32,24 @@ memory_db = {"fruits": []}
 # --- Routes / Endpoints ---
 
 # GET Endpoint: Used to retrieve data.
-# When we visit http://localhost:8000/fruits, this function runs.
+@app.get("/")
+def health_check():
+    """
+    A simple endpoint to verify the backend is running 
+    and reachable from the frontend.
+    """
+    return {"status": "active", "message": "Backend is running!"}
 
-@app.get(path="/fruits", response_model=Fruits)
-def get_fruits():
-    # We wrap the list from memory_db in the Fruits Pydantic model
-    return Fruits(fruits=memory_db["fruits"])
-
-
-# POST Endpoint: Used to send new data to the server.
-# It receives a JSON body, validates it against the 'Fruit' model, and saves it.
-@app.post("/fruits", response_model=Fruit)
-def add_fruit(fruit: Fruit):
-    memory_db["fruits"].append(fruit)
-    return fruit
+# Run with: uvicorn app.main:app --reload
 
 
-# --- Server Execution ---
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# # --- Server Execution ---
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
+
+
