@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-# will import routes later
-# from app.api import endpoints
+# import router from endpoints module
+from src.api.endpoints import router as api_router
 
 # --- App Initialization ---
 app = FastAPI(title="AlgoFinance API")
@@ -30,6 +30,10 @@ memory_db = {"fruits": []}
 
 
 # --- Routes / Endpoints ---
+# REGISTER THE ROUTER
+# 'prefix="/api"' means all routes in that file will start with /api
+# e.g., /api/upload-statement
+app.include_router(api_router, prefix="/api")
 
 # GET Endpoint: Used to retrieve data.
 @app.get("/")
@@ -40,7 +44,7 @@ def health_check():
     """
     return {"status": "active", "message": "Backend is running!"}
 
-# Run with: uvicorn app.main:app --reload
+# we can run main.py with: uvicorn app.main:app --reload
 
 
 
