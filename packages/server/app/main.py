@@ -40,7 +40,7 @@ def health_check():
     """
     return {"status": "active", "message": "Backend is running!"}
 
-# Run with: uvicorn app.main:app --reload
+# we can run main.py with: uvicorn app.main:app --reload
 
 
 
