@@ -1,8 +1,12 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 # Importing service function from pdf_parser module 
-from src.service.pdf_parser import extract_data_from_file
+from src.services.pdf_parser import extract_data_from_file
 #import dashboard data generator from analytics module
-from app.services.analytics import generate_dashboard_data
+from src.services.analytics import generate_dashboard_data
+#import normalizer function from normalizer module
+from src.services.normalizer import normalize_financial_data
+#import categorization function from ml module
+from src.services.ml_model import predict_categories
 
 router = APIRouter()
 
@@ -35,6 +39,29 @@ async def upload_financial_statement(file: UploadFile = File(...)):
         # Convert Timestamp to string for JSON
         enriched_df['date'] = enriched_df['date'].astype(str)
         transactions_list = enriched_df.to_dict(orient="records")
+
+        # --- THE SAFETY FIX START ---
+        
+        # Step A: Convert timestamps to strings (JSON can't read Timestamp objects)
+        if 'date' in enriched_df.columns:
+            enriched_df['date'] = enriched_df['date'].astype(str)
+            
+        # Step B: The "Nuclear Option" for NaNs
+        # This replaces ALL NaNs (in descriptions, amounts, categories) with None (JSON null)
+        enriched_df = enriched_df.replace({np.nan: None})
+        
+        # Step C: Sanitize the Analytics Data too
+        # Sometimes 'saving_rate' can be NaN if division by zero occurred weirdly
+        import math
+        def clean_float(val):
+            if isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
+                return 0.0
+            return val
+
+        # Clean the summary dictionary
+        dashboard_data['summary'] = {k: clean_float(v) for k, v in dashboard_data['summary'].items()}
+        
+        # --- THE SAFETY FIX END ---
 
         return {
             "status": "success",
