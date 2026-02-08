@@ -1,6 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 # Importing service function from pdf_parser module 
-from src.service.pdf_parser import extract_data_from_file 
+from src.service.pdf_parser import extract_data_from_file
+#import dashboard data generator from analytics module
+from app.services.analytics import generate_dashboard_data
 
 router = APIRouter()
 
@@ -16,23 +18,30 @@ async def upload_financial_statement(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Invalid file format. Please upload .xlsx, .csv, or .pdf")
 
     try:
-        # 2. Calling the "Engine" (Service)
-        # We use 'await' because file reading is an I/O operation
-        data = await extract_data_from_file(file)
+        # 1. Calling the "Engine" (Service)
+        # ingest and extract data from the uploaded file
+        raw_df = await extract_data_from_file(file)
+
+        # 2. Normalization
+        clean_df = normalize_financial_data(raw_df)
+
+        # 3. Categorization (ML) 
+        enriched_df = predict_categories(clean_df)
+
+        # 4. Analytics (Generate logic for all sections)
+        dashboard_data = generate_dashboard_data(enriched_df)
         
-        # 3. Format the response
-        # If service returns a Pandas DataFrame, we must convert it to JSON-friendly dict
-        # If service already returns a list, you can skip .to_dict()
-        if hasattr(data, "to_dict"):
-            response_data = data.to_dict(orient="records")
-        else:
-            response_data = data
+        # 5. Prepare Transaction List (Transaction Section of Frontend)
+        # Convert Timestamp to string for JSON
+        enriched_df['date'] = enriched_df['date'].astype(str)
+        transactions_list = enriched_df.to_dict(orient="records")
 
         return {
-            "status": "success", 
-            "filename": file.filename,
-            "total_transactions": len(response_data),
-            "data": response_data
+            "status": "success",
+            "summary": dashboard_data['summary'],       # Section 1
+            "overview": dashboard_data['overview'],     # Section 2
+            "transactions": transactions_list,          # Section 3
+            "insights": dashboard_data['insights']      # Section 4
         }
 
     except Exception as e:
