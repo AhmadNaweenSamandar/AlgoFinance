@@ -2,6 +2,7 @@ import pandas as pd
 from fastapi import UploadFile
 import numpy as np
 from io import BytesIO
+import pdfplumber
 
 #function to extract data from uploaded files
 async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
@@ -19,7 +20,7 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
         # Pandas can read Excel directly
        df = pd.read_excel(BytesIO(contents))
 
-       
+
         # --- NEW PDF LOGIC ---
     elif filename.endswith('.pdf'):
         # We need to save the bytes to a temporary file because pdfplumber expects a path or file-like object
