@@ -77,7 +77,7 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
 
             # Create DataFrame
             # We assume the first row found was the header, or we use generic names
-            df = pd.DataFrame(all_rows[1:], columns=all_rows[0])
+        df = pd.DataFrame(all_rows[1:], columns=all_rows[0])
     
     # Basic Cleanup for Normalizer
     # Ensure all columns are strings (sometimes pdfplumber extracts None as header)
