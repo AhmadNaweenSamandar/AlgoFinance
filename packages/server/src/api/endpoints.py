@@ -112,8 +112,16 @@ async def upload_financial_statement(file: UploadFile = File(...)):
         # -------------------------------------------------
         return final_response
 
-    except Exception as e:
-        # Log the error internally here (print(e)) 
-        # but return a clean error message to the frontend
-        print(f"Server Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    # --- NEW ENDPOINT FOR CHAT ---
+    @router.post("/chat")
+    async def chat_with_finance(request: ChatRequest):
+        """
+        Endpoint for the Chat Interface.
+        User sends: {"question": "How much did I spend on Uber?"}
+        Backend returns: {"answer": "You spent a total of $45.50 on Uber..."}
+        """
+        try:
+            answer = ask_financial_question(request.question)
+            return {"answer": answer}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
