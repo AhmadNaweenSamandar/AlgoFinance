@@ -9,6 +9,14 @@ from src.services.normalizer import normalize_financial_data
 from src.services.ml_model import predict_categories
 import numpy as np
 import math
+#import chat service functions
+from app.services.chat_service import process_data_for_chat, ask_financial_question 
+from pydantic import BaseModel
+
+# Schema for the question
+class ChatRequest(BaseModel):
+    question: str
+
 
 def recursive_clean(obj):
     """
@@ -93,6 +101,15 @@ async def upload_financial_statement(file: UploadFile = File(...)):
         # This guarantees NO NaNs survive, whether they are in the list OR the summary
         final_response = recursive_clean(raw_response)
 
+
+        # -------------------------------------------------
+        # 4. Process for Chatbot (Create the "Brain")
+        # We do this in the background so the user can start chatting immediately
+        try:
+            process_data_for_chat(enriched_df)
+        except Exception as e:
+            print(f"Chatbot Indexing Failed: {e}")
+        # -------------------------------------------------
         return final_response
 
     except Exception as e:
