@@ -1,17 +1,15 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-# Importing service function from pdf_parser module 
-from src.services.pdf_parser import extract_data_from_file
-#import dashboard data generator from analytics module
-from src.services.analytics import generate_dashboard_data
-#import normalizer function from normalizer module
-from src.services.normalizer import normalize_financial_data
-#import categorization function from ml module
-from src.services.ml_model import predict_categories
-import numpy as np
-import math
-#import chat service functions
-from app.services.chat_service import process_data_for_chat, ask_financial_question 
 from pydantic import BaseModel
+import math
+import numpy as np
+
+# Adjust these imports to match your actual folder structure (src vs app)
+from src.services.pdf_parser import extract_data_from_file
+from src.services.analytics import generate_dashboard_data
+from src.services.normalizer import normalize_financial_data
+from src.services.ml_model import predict_categories
+from app.services.chat_service import process_data_for_chat, ask_financial_question
+
 
 # Schema for the question
 class ChatRequest(BaseModel):
@@ -33,95 +31,72 @@ def recursive_clean(obj):
     return obj
 
 
-
 router = APIRouter()
+
 
 @router.post("/upload-statement")
 async def upload_financial_statement(file: UploadFile = File(...)):
     """
-    Endpoint to accept a financial file (PDF/Excel), 
+    Endpoint to accept a financial file (PDF/Excel),
     process it, and return the raw data as JSON.
     """
-    # 1. Validation (validating inputs)
-    # if the file is not ending with .xlsx, .csv, or .pdf, reject it
-    if not file.filename.endswith(('.xlsx', '.csv', '.pdf')):
-        raise HTTPException(status_code=400, detail="Invalid file format. Please upload .xlsx, .csv, or .pdf")
+    if not file.filename.endswith((".xlsx", ".csv", ".pdf")):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file format. Please upload .xlsx, .csv, or .pdf",
+        )
 
     try:
-        # 1. Calling the "Engine" (Service)
-        # ingest and extract data from the uploaded file
+        # 1. Ingest
         raw_df = await extract_data_from_file(file)
 
-        # 2. Normalization
+        # 2. Normalize
         clean_df = normalize_financial_data(raw_df)
 
-        # 3. Categorization (ML) 
+        # 3. Categorize
         enriched_df = predict_categories(clean_df)
 
-        # 4. Analytics (Generate logic for all sections)
+        # 4. Analytics
         dashboard_data = generate_dashboard_data(enriched_df)
-        
-        # 5. Prepare Transaction List (Transaction Section of Frontend)
-        # Convert Timestamp to string for JSON
-        enriched_df['date'] = enriched_df['date'].astype(str)
-        transactions_list = enriched_df.to_dict(orient="records")
 
-        # # --- THE SAFETY FIX START ---
-        
-        # # Step A: Convert timestamps to strings (JSON can't read Timestamp objects)
-        # if 'date' in enriched_df.columns:
-        #     enriched_df['date'] = enriched_df['date'].astype(str)
-            
-        # # Step B: The "Nuclear Option" for NaNs
-        # # This replaces ALL NaNs (in descriptions, amounts, categories) with None (JSON null)
-        # enriched_df = enriched_df.replace({np.nan: None})
-        
-        # # Step C: Sanitize the Analytics Data too
-        # # Sometimes 'saving_rate' can be NaN if division by zero occurred weirdly
-        # import math
-        # def clean_float(val):
-        #     if isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
-        #         return 0.0
-        #     return val
+        # 5. Prepare Transaction List (WITHOUT mutating enriched_df)
+        # We use .assign() to create a temporary copy with string dates just for the JSON response
+        transactions_list = enriched_df.assign(
+            date=enriched_df["date"].astype(str)
+        ).to_dict(orient="records")
 
-        # # Clean the summary dictionary
-        # dashboard_data['summary'] = {k: clean_float(v) for k, v in dashboard_data['summary'].items()}
-        
-        # # --- THE SAFETY FIX END ---
-
-        raw_response = {
-            "status": "success",
-            "summary": dashboard_data['summary'],       # Section 1
-            "overview": dashboard_data['overview'],     # Section 2
-            "transactions": transactions_list,          # Section 3
-            "insights": dashboard_data['insights']      # Section 4
-        }
-
-        # --- THE FIX: SANITIZE EVERYTHING ---
-        # This guarantees NO NaNs survive, whether they are in the list OR the summary
-        final_response = recursive_clean(raw_response)
-
-
-        # -------------------------------------------------
-        # 4. Process for Chatbot (Create the "Brain")
-        # We do this in the background so the user can start chatting immediately
+        # 6. Process for Chatbot (Create the "Brain")
+        # We do this BEFORE returning, and we pass the ORIGINAL enriched_df (with Timestamp objects)
         try:
             process_data_for_chat(enriched_df)
         except Exception as e:
             print(f"Chatbot Indexing Failed: {e}")
-        # -------------------------------------------------
-        return final_response
 
-    # --- NEW ENDPOINT FOR CHAT ---
-    @router.post("/chat")
-    async def chat_with_finance(request: ChatRequest):
-        """
-        Endpoint for the Chat Interface.
-        User sends: {"question": "How much did I spend on Uber?"}
-        Backend returns: {"answer": "You spent a total of $45.50 on Uber..."}
-        """
-        try:
-            answer = ask_financial_question(request.question)
-            return {"answer": answer}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        # 7. Final Response Construction
+        raw_response = {
+            "status": "success",
+            "summary": dashboard_data["summary"],
+            "overview": dashboard_data["overview"],
+            "transactions": transactions_list,
+            "insights": dashboard_data["insights"],
+        }
+
+        # 8. Sanitize and Return
+        return recursive_clean(raw_response)
+
+    except Exception as e:
+        print(f"Error processing file: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- NEW ENDPOINT FOR CHAT ---
+@router.post("/chat")
+async def chat_with_finance(request: ChatRequest):
+    """
+    Endpoint for the Chat Interface.
+    """
+    try:  # <--- Indentation fixed here
+        answer = ask_financial_question(request.question)
+        return {"answer": answer}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
