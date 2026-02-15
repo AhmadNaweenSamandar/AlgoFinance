@@ -13,7 +13,7 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
-# Load API Key
+# Load API Key (Gemini)
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
