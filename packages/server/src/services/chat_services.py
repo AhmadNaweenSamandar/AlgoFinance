@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 from dotenv import load_dotenv
+import shutil
 
 # --- 1. CORE IMPORTS (No 'langchain.chains') ---
 # previouy we had: from langchain.chains import RetrievalQA which throughs an error because of the new LCEL structure. We will now build the chain manually using the new Runnable API.
@@ -17,88 +18,77 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Global variable
-vector_db = None
 DB_PATH = "./chroma_db_store"  # <--- New Folder to save uploaded statement data
 
 
-def get_vector_db():
-    """
-    Helper to load the DB from disk if it exists.
-    """
-    global vector_db
-    embeddings = GoogleGenerativeAIEmbeddings(
+def get_embeddings():
+    return GoogleGenerativeAIEmbeddings(
         model="models/embedding-001", gemini_api_key=GEMINI_API_KEY
     )
-
-    # If in memory, return it
-    if vector_db:
-        return vector_db
-
-    # If on disk, load it
-    if os.path.exists(DB_PATH):
-        print("📂 Loading Chatbot Brain from disk...")
-        vector_db = Chroma(
-            persist_directory=DB_PATH,
-            embedding_function=embeddings,
-            collection_name="financial_data",
-        )
-        return vector_db
-
-    return None
 
 
 def process_data_for_chat(df: pd.DataFrame):
     """
-    Ingests data and builds the Vector DB (Same as before)
+    1. Clears old memory.
+    2. Ingests new data.
+    3. Saves it to the hard drive.
     """
-    global vector_db
 
+    print("--- STARTING CHATBOT PROCESSING ---")
+
+    # Step A: Clean up old database (Force a fresh start)
+    if os.path.exists(DB_PATH):
+        print(f"Clearing old data at {DB_PATH}...")
+        shutil.rmtree(DB_PATH)  # Delete the folder
+
+    # Step B: Convert DataFrame to Text Documents
     documents = []
     for _, row in df.iterrows():
+        # Handle missing values safely
         desc = row.get("description", "Unknown")
         cat = row.get("category", "Uncategorized")
         amt = row.get("amount", 0)
         date = row.get("date", "Unknown Date")
 
+        # Create the text description
         text = f"Date: {date} | Amount: ${amt} | Vendor: {desc} | Category: {cat}"
         documents.append(Document(page_content=text, metadata=row.to_dict()))
 
-    # Embeddings
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001", google_api_key=GEMINI_API_KEY
-    )
+    print(f"Created {len(documents)} documents for indexing.")
 
-    # Vector DB
-    print(f"SAVING Chatbot Brain to disk at {DB_PATH}...")
+    # Step C: Create and Save the Vector DB
+    # The 'persist_directory' argument forces it to save to disk
     vector_db = Chroma.from_documents(
-        documents,
-        embeddings,
+        documents=documents,
+        embedding=get_embeddings(),
         collection_name="financial_data",
-        persist_directory=DB_PATH,  # <--- This saves it!
+        persist_directory=DB_PATH,  # <--- This is the key to saving it on disk
     )
-
-
-def format_docs(docs):
-    """
-    Helper to join retrieved documents into a single string.
-    """
-    return "\n\n".join(doc.page_content for doc in docs)
+    print(f"SUCCESSFULLY SAVED to {DB_PATH}")
 
 
 def ask_financial_question(question: str):
     """
-    Pure LCEL Implementation (The "Pipe" Method)
+    Reads from the hard drive to answer the question.
     """
-    # CHANGED: Use the helper to try loading from disk
-    db = get_vector_db()
+    print(f"--- USER ASKED: {question} ---")
 
-    if not db:
-        return "Please upload a financial statement first."
+    # Step 1: Check if the database exists on disk
+    if not os.path.exists(DB_PATH):
+        print("Error: DB directory not found.")
+        return "Please upload a financial statement first (Database not found)."
+
+    # Step 2: Load the Database from Disk
+    print("Loading brain from disk...")
+    vector_db = Chroma(
+        persist_directory=DB_PATH,
+        embedding_function=get_embeddings(),
+        collection_name="financial_data",
+    )
 
     # 1. Setup LLM
     llm = ChatGoogleGenerativeAI(
-        model="gemini-pro", google_api_key=GEMINI_API_KEY, temperature=0
+        model="gemini-3-flash-preview", google_api_key=GEMINI_API_KEY, temperature=0
     )
 
     # 2. Setup Retriever
@@ -117,6 +107,9 @@ def ask_financial_question(question: str):
     # We use the pipe operator (|) to connect components directly.
     # retriever -> format_docs -> prompt -> llm -> output_parser
 
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
+
     rag_chain = (
         {"context": retriever | format_docs, "question": RunnablePassthrough()}
         | prompt
@@ -124,5 +117,11 @@ def ask_financial_question(question: str):
         | StrOutputParser()
     )
 
-    # 5. Execute
-    return rag_chain.invoke(question)
+    # Step 5: Execute
+    try:
+        response = rag_chain.invoke(question)
+        print("Answer Generated")
+        return response
+    except Exception as e:
+        print(f"Error generating answer: {e}")
+        return "Sorry, I encountered an error while thinking."
