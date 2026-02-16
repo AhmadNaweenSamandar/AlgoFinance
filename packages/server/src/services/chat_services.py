@@ -19,6 +19,33 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Global variable
 vector_db = None
+DB_PATH = "./chroma_db_store"  # <--- New Folder to save uploaded statement data
+
+
+def get_vector_db():
+    """
+    Helper to load the DB from disk if it exists.
+    """
+    global vector_db
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="models/embedding-001", gemini_api_key=GEMINI_API_KEY
+    )
+
+    # If in memory, return it
+    if vector_db:
+        return vector_db
+
+    # If on disk, load it
+    if os.path.exists(DB_PATH):
+        print("📂 Loading Chatbot Brain from disk...")
+        vector_db = Chroma(
+            persist_directory=DB_PATH,
+            embedding_function=embeddings,
+            collection_name="financial_data",
+        )
+        return vector_db
+
+    return None
 
 
 def process_data_for_chat(df: pd.DataFrame):
@@ -43,10 +70,13 @@ def process_data_for_chat(df: pd.DataFrame):
     )
 
     # Vector DB
+    print(f"SAVING Chatbot Brain to disk at {DB_PATH}...")
     vector_db = Chroma.from_documents(
-        documents, embeddings, collection_name="financial_data"
+        documents,
+        embeddings,
+        collection_name="financial_data",
+        persist_directory=DB_PATH,  # <--- This saves it!
     )
-    print(f"✅ Gemini Chatbot Brain created with {len(documents)} transactions.")
 
 
 def format_docs(docs):
@@ -60,8 +90,10 @@ def ask_financial_question(question: str):
     """
     Pure LCEL Implementation (The "Pipe" Method)
     """
-    global vector_db
-    if not vector_db:
+    # CHANGED: Use the helper to try loading from disk
+    db = get_vector_db()
+
+    if not db:
         return "Please upload a financial statement first."
 
     # 1. Setup LLM
