@@ -86,13 +86,26 @@ def ask_financial_question(question: str):
         collection_name="financial_data",
     )
 
+    # 2. Setup Retriever
+    retriever = vector_db.as_retriever(search_kwargs={"k": 20})
+
+    # --- DEBUGGING START ---
+    # Let's see exactly what the database finds BEFORE we send it to Gemini
+    print("🔍 Searching database...")
+    docs = retriever.invoke(question)
+    print(f"📄 Found {len(docs)} relevant documents.")
+
+    if len(docs) > 0:
+        print(f"👀 Top Result Preview: {docs[0].page_content[:100]}...")
+    else:
+        print("❌ CRITICAL: Retriever found 0 documents! The AI has no context.")
+        # If this happens, it means the embeddings are mismatched or the DB is empty.
+    # --- DEBUGGING END ---
+
     # 1. Setup LLM
     llm = ChatGoogleGenerativeAI(
         model="gemini-3-flash-preview", google_api_key=API_KEY, temperature=0
     )
-
-    # 2. Setup Retriever
-    retriever = vector_db.as_retriever(search_kwargs={"k": 20})
 
     # 3. Create Prompt
     template = """You are a Financial Analyst. Answer the question based only on the following context:
