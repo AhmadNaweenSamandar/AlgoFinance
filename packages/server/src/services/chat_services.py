@@ -91,14 +91,14 @@ def ask_financial_question(question: str):
 
     # --- DEBUGGING START ---
     # Let's see exactly what the database finds BEFORE we send it to Gemini
-    print("🔍 Searching database...")
+    print("Searching database...")
     docs = retriever.invoke(question)
-    print(f"📄 Found {len(docs)} relevant documents.")
+    print(f"Found {len(docs)} relevant documents.")
 
     if len(docs) > 0:
-        print(f"👀 Top Result Preview: {docs[0].page_content[:100]}...")
+        print(f"Top Result Preview: {docs[0].page_content[:100]}...")
     else:
-        print("❌ CRITICAL: Retriever found 0 documents! The AI has no context.")
+        print("CRITICAL: Retriever found 0 documents! The AI has no context.")
         # If this happens, it means the embeddings are mismatched or the DB is empty.
     # --- DEBUGGING END ---
 
