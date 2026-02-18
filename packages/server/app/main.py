@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # import router from endpoints module
 from src.api.endpoints import router as api_router
 
+
 # --- App Initialization ---
 app = FastAPI(title="AlgoFinance API")
 

@@ -1,83 +1,202 @@
+import gc
+from time import time
 import pandas as pd
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.schema.document import Document
-from langchain.vectorstores import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain.chains import RetrievalQA
 from dotenv import load_dotenv
+import shutil
 
-# Load API Key from .env file
+# --- 1. CORE IMPORTS (No 'langchain.chains') ---
+# previouy we had: from langchain.chains import RetrievalQA which throughs an error because of the new LCEL structure. We will now build the chain manually using the new Runnable API.
+from langchain_core.documents import Document
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
+# --- 2. TOOL IMPORTS ---
+from langchain_chroma import Chroma
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+
+# Load API Key (Gemini)
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Global variable to store the "Brain" for the current session
-# In production, we will use a real DB (Postgres/Pinecone) with User IDs
-vector_db = None
+DB_PATH = "./chroma_db_store"  # <--- New Folder to save uploaded statement data
+
+
+def get_embeddings():
+    return GoogleGenerativeAIEmbeddings(
+        model="models/gemini-embedding-001", google_api_key=API_KEY
+    )
+
+
+# function to safely delete folders on Windows (with retries)
+def force_delete_folder(path):
+    """
+    Helper to safely delete folders on Windows.
+    Retries 3 times if the file is locked.
+    """
+    if not os.path.exists(path):
+        return
+
+    # 1. Force Python to release memory references
+    gc.collect()
+
+    # 2. Try to delete with retries
+    for i in range(3):
+        try:
+            shutil.rmtree(path)
+            print(f"Successfully deleted {path}")
+            return
+        except PermissionError:
+            print(f"⚠️ Windows Lock detected on {path}. Waiting 1s to retry...")
+            time.sleep(1)
+        except Exception as e:
+            print(f"Error deleting {path}: {e}")
+            return
+
+    print(
+        "❌ Could not delete folder after 3 attempts. Proceeding anyway (might cause issues)."
+    )
+
 
 def process_data_for_chat(df: pd.DataFrame):
-    """
-    1. Converts the DataFrame into a text format that AI can read.
-    2. Stores it in a Vector Database (vector_db) for fast searching.
-    """
-    global vector_db
-    
-    # 1. Convert DataFrame to "Documents" (Text Chunks)
-    # We turn: Date: 2025-01-01 | Desc: UBER | Amount: -20
-    # Into: "On 2025-01-01, you spent $20.00 on UBER (Transport)."
-    documents = []
-    for _, row in df.iterrows():
-        # Handle missing values safely
-        desc = row.get('description', 'Unknown')
-        cat = row.get('category', 'Uncategorized')
-        amt = row.get('amount', 0)
-        date = row.get('date', 'Unknown Date')
-        
-        # Create a natural language sentence
-        text = f"On {date}, you spent ${abs(amt):.2f} at {desc}. Category: {cat}."
-        if amt > 0:
-            text = f"On {date}, you received ${amt:.2f} from {desc}. Category: {cat}."
-            
-        documents.append(Document(page_content=text, metadata=row.to_dict()))
+    print("\n--- 🔍 DIAGNOSTIC: DATA INGESTION ---")
 
-    # 2. Create the Vector Store (The "Brain")
-    # This turns text into numbers so we can search "Coffee" and find "Starbucks"
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", gemini_api_key=GEMINI_API_KEY)
-    
-    # Create a temporary in-memory database
-    vector_db = Chroma.from_documents(
-        documents, 
-        embeddings,
-        collection_name="financial_data"
-    )
-    print("Chatbot Brain created with", len(documents), "transactions.")
+    # 1. Print the Raw Columns found in the Excel file
+    print(f"Columns Found in Excel: {list(df.columns)}")
+
+    # 2. Normalize columns (strip spaces, make lowercase)
+    df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+    print(f"DATA CLEANING: Normalized Columns to: {list(df.columns)}")
+
+    # 3. Clean up old DB
+    force_delete_folder(DB_PATH)
+
+    # 4. Create Documents with Strict Checks
+    documents = []
+    for index, row in df.iterrows():
+        # flexible mapping: try common names for "Description"
+        desc = (
+            row.get("description")
+            or row.get("transaction")
+            or row.get("details")
+            or "Unknown"
+        )
+
+        # flexible mapping for "Category"
+        cat = row.get("category") or row.get("type") or "Uncategorized"
+
+        # flexible mapping for "Amount"
+        amt = row.get("amount") or row.get("cost") or row.get("debit") or 0
+
+        # flexible mapping for "Date"
+        date = row.get("date") or row.get("transaction_date") or "Unknown Date"
+
+        # Content for the AI to read
+        text = f"Date: {date} | Amount: ${amt} | Vendor: {desc} | Category: {cat}"
+
+        # Metadata for filtering
+        meta = {"source": "user_upload", "row": index}
+
+        documents.append(Document(page_content=text, metadata=meta))
+
+    # 5. PRINT THE FIRST DOCUMENT (Crucial Debug Step)
+    if len(documents) > 0:
+        print(f"\nPREVIEW OF DOCUMENT #1:\n{documents[0].page_content}")
+        if "Unknown" in documents[0].page_content and str(amt) == "0":
+            print("WARNING: Document looks empty! Check column names above.")
+    else:
+        print("CRITICAL: No documents created.")
+        return
+
+    # 6. Save to Disk
+    print(f"💾 Saving {len(documents)} documents to {DB_PATH}...")
+    try:
+        vector_db = Chroma.from_documents(
+            documents=documents,
+            embedding=get_embeddings(),
+            collection_name="financial_data",
+            persist_directory=DB_PATH,
+        )
+        print("DATABASE SAVED SUCCESSFULLY")
+
+        # Windows Hygiene
+        vector_db = None
+        del vector_db
+        gc.collect()
+
+    except Exception as e:
+        print(f"ERROR SAVING DB: {e}")
+
 
 def ask_financial_question(question: str):
     """
-    Searches the Vector DB for relevant transactions and asks Gemini to answer.
+    Reads from the hard drive to answer the question.
     """
-    global vector_db
-    if not vector_db:
-        return "Please upload a financial statement first."
+    print(f"--- USER ASKED: {question} ---")
 
-    # 1. Setup the LLM (Gemini Pro)
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", gemini_api_key=GEMINI_API_KEY, temperature=0)
+    # Step 1: Check if the database exists on disk
+    if not os.path.exists(DB_PATH):
+        print("Error: DB directory not found.")
+        return "Please upload a financial statement first (Database not found)."
 
-    # 2. Create the "Chain" (The Conversation Logic)
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vector_db.as_retriever(search_kwargs={"k": 20}) # Retrieve top 20 relevant transactions
+    # Step 2: Load the Database from Disk
+    print("Loading brain from disk...")
+    vector_db = Chroma(
+        persist_directory=DB_PATH,
+        embedding_function=get_embeddings(),
+        collection_name="financial_data",
     )
 
-    # 3. Ask the question
-    # We add a custom prompt to make it act like a Financial Advisor
-    full_query = f"""
-    You are a helpful Financial Advisor. Answer the user's question based strictly on the context provided below.
-    If the answer is not in the context, say "I don't see that in your statement."
-    
-    User Question: {question}
+    # 2. Setup Retriever
+    retriever = vector_db.as_retriever(search_kwargs={"k": 20})
+
+    # --- DEBUGGING START ---
+    # Let's see exactly what the database finds BEFORE we send it to Gemini
+    print("Searching database...")
+    docs = retriever.invoke(question)
+    print(f"Found {len(docs)} relevant documents.")
+
+    if len(docs) > 0:
+        print(f"Top Result Preview: {docs[0].page_content[:100]}...")
+    else:
+        print("CRITICAL: Retriever found 0 documents! The AI has no context.")
+        # If this happens, it means the embeddings are mismatched or the DB is empty.
+    # --- DEBUGGING END ---
+
+    # 1. Setup LLM
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-3-flash-preview", google_api_key=API_KEY, temperature=0
+    )
+
+    # 3. Create Prompt
+    template = """You are a Financial Analyst. Answer the question based only on the following context:
+
+    {context}
+
+    Question: {question}
     """
-    
-    response = qa_chain.run(full_query)
-    return response
+    prompt = ChatPromptTemplate.from_template(template)
+
+    # 4. Build the "Runnable Chain"
+    # We use the pipe operator (|) to connect components directly.
+    # retriever -> format_docs -> prompt -> llm -> output_parser
+
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
+
+    rag_chain = (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+
+    # Step 5: Execute
+    try:
+        response = rag_chain.invoke(question)
+        print("Answer Generated")
+        return response
+    except Exception as e:
+        print(f"Error generating answer: {e}")
+        return "Sorry, I encountered an error while thinking."
