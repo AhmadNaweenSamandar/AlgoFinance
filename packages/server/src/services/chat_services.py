@@ -23,7 +23,7 @@ DB_PATH = "./chroma_db_store"  # <--- New Folder to save uploaded statement data
 
 def get_embeddings():
     return GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004", google_api_key=API_KEY
+        model="models/gemini-embedding-001", google_api_key=API_KEY
     )
 
 
