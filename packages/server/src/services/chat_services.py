@@ -16,14 +16,14 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 
 # Load API Key (Gemini)
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+API_KEY = os.getenv("GEMINI_API_KEY")
 
 DB_PATH = "./chroma_db_store"  # <--- New Folder to save uploaded statement data
 
 
 def get_embeddings():
     return GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001", gemini_api_key=GEMINI_API_KEY
+        model="models/embedding-001", google_api_key=API_KEY
     )
 
 
@@ -88,7 +88,7 @@ def ask_financial_question(question: str):
 
     # 1. Setup LLM
     llm = ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview", google_api_key=GEMINI_API_KEY, temperature=0
+        model="gemini-3-flash-preview", google_api_key=API_KEY, temperature=0
     )
 
     # 2. Setup Retriever
