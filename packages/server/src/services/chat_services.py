@@ -60,45 +60,57 @@ def force_delete_folder(path):
 
 
 def process_data_for_chat(df: pd.DataFrame):
-    """
-    1. Clears old memory.
-    2. Ingests new data.
-    3. Saves it to the hard drive.
-    """
-    print("--- STARTING CHATBOT PROCESSING ---")
+    print("\n--- 🔍 DIAGNOSTIC: DATA INGESTION ---")
 
-    # Step A: Safe Cleanup
+    # 1. Print the Raw Columns found in the Excel file
+    print(f"Columns Found in Excel: {list(df.columns)}")
+
+    # 2. Normalize columns (strip spaces, make lowercase)
+    df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+    print(f"DATA CLEANING: Normalized Columns to: {list(df.columns)}")
+
+    # 3. Clean up old DB
     force_delete_folder(DB_PATH)
 
-    # Step B: Inspect the Data (Debug Print)
-    # This proves if your DataFrame actually has data!
-    print(f"DataFrame Shape: {df.shape}")
-    if not df.empty:
-        print(f"First Row Preview:\n{df.iloc[0].to_dict()}")
-
-    # Convert DataFrame to Text Documents
+    # 4. Create Documents with Strict Checks
     documents = []
-    for _, row in df.iterrows():
-        # normalize column names to lowercase to avoid "Description" vs "description" bugs
-        row_data = {k.lower(): v for k, v in row.to_dict().items()}
-        # Handle missing values safely
-        desc = row.get("description", "Unknown")
-        cat = row.get("category", "Uncategorized")
-        amt = row.get("amount", 0)
-        date = row.get("date", "Unknown Date")
+    for index, row in df.iterrows():
+        # flexible mapping: try common names for "Description"
+        desc = (
+            row.get("description")
+            or row.get("transaction")
+            or row.get("details")
+            or "Unknown"
+        )
 
-        # Create the text description
+        # flexible mapping for "Category"
+        cat = row.get("category") or row.get("type") or "Uncategorized"
+
+        # flexible mapping for "Amount"
+        amt = row.get("amount") or row.get("cost") or row.get("debit") or 0
+
+        # flexible mapping for "Date"
+        date = row.get("date") or row.get("transaction_date") or "Unknown Date"
+
+        # Content for the AI to read
         text = f"Date: {date} | Amount: ${amt} | Vendor: {desc} | Category: {cat}"
-        documents.append(Document(page_content=text, metadata=row.to_dict()))
 
-    print(f"Created {len(documents)} documents for indexing.")
+        # Metadata for filtering
+        meta = {"source": "user_upload", "row": index}
 
-    if len(documents) == 0:
-        print("CRITICAL: No documents were created! Check your column names.")
+        documents.append(Document(page_content=text, metadata=meta))
+
+    # 5. PRINT THE FIRST DOCUMENT (Crucial Debug Step)
+    if len(documents) > 0:
+        print(f"\nPREVIEW OF DOCUMENT #1:\n{documents[0].page_content}")
+        if "Unknown" in documents[0].page_content and str(amt) == "0":
+            print("WARNING: Document looks empty! Check column names above.")
+    else:
+        print("CRITICAL: No documents created.")
         return
 
-    # Step C: Create and Save the Vector DB
-    # The 'persist_directory' argument forces it to save to disk
+    # 6. Save to Disk
+    print(f"💾 Saving {len(documents)} documents to {DB_PATH}...")
     try:
         vector_db = Chroma.from_documents(
             documents=documents,
@@ -106,15 +118,15 @@ def process_data_for_chat(df: pd.DataFrame):
             collection_name="financial_data",
             persist_directory=DB_PATH,
         )
-        print(f"SUCCESSFULLY SAVED to {DB_PATH}")
+        print("DATABASE SAVED SUCCESSFULLY")
 
-        # Windows Hygiene: Release the variable immediately
+        # Windows Hygiene
         vector_db = None
         del vector_db
         gc.collect()
 
     except Exception as e:
-        print(f"CRITICAL ERROR saving DB: {e}")
+        print(f"ERROR SAVING DB: {e}")
 
 
 def ask_financial_question(question: str):
