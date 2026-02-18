@@ -1,3 +1,5 @@
+import gc
+from time import time
 import pandas as pd
 import os
 from dotenv import load_dotenv
@@ -27,23 +29,58 @@ def get_embeddings():
     )
 
 
+# function to safely delete folders on Windows (with retries)
+def force_delete_folder(path):
+    """
+    Helper to safely delete folders on Windows.
+    Retries 3 times if the file is locked.
+    """
+    if not os.path.exists(path):
+        return
+
+    # 1. Force Python to release memory references
+    gc.collect()
+
+    # 2. Try to delete with retries
+    for i in range(3):
+        try:
+            shutil.rmtree(path)
+            print(f"Successfully deleted {path}")
+            return
+        except PermissionError:
+            print(f"⚠️ Windows Lock detected on {path}. Waiting 1s to retry...")
+            time.sleep(1)
+        except Exception as e:
+            print(f"Error deleting {path}: {e}")
+            return
+
+    print(
+        "❌ Could not delete folder after 3 attempts. Proceeding anyway (might cause issues)."
+    )
+
+
 def process_data_for_chat(df: pd.DataFrame):
     """
     1. Clears old memory.
     2. Ingests new data.
     3. Saves it to the hard drive.
     """
-
     print("--- STARTING CHATBOT PROCESSING ---")
 
-    # Step A: Clean up old database (Force a fresh start)
-    if os.path.exists(DB_PATH):
-        print(f"Clearing old data at {DB_PATH}...")
-        shutil.rmtree(DB_PATH)  # Delete the folder
+    # Step A: Safe Cleanup
+    force_delete_folder(DB_PATH)
 
-    # Step B: Convert DataFrame to Text Documents
+    # Step B: Inspect the Data (Debug Print)
+    # This proves if your DataFrame actually has data!
+    print(f"DataFrame Shape: {df.shape}")
+    if not df.empty:
+        print(f"First Row Preview:\n{df.iloc[0].to_dict()}")
+
+    # Convert DataFrame to Text Documents
     documents = []
     for _, row in df.iterrows():
+        # normalize column names to lowercase to avoid "Description" vs "description" bugs
+        row_data = {k.lower(): v for k, v in row.to_dict().items()}
         # Handle missing values safely
         desc = row.get("description", "Unknown")
         cat = row.get("category", "Uncategorized")
@@ -56,15 +93,28 @@ def process_data_for_chat(df: pd.DataFrame):
 
     print(f"Created {len(documents)} documents for indexing.")
 
+    if len(documents) == 0:
+        print("CRITICAL: No documents were created! Check your column names.")
+        return
+
     # Step C: Create and Save the Vector DB
     # The 'persist_directory' argument forces it to save to disk
-    vector_db = Chroma.from_documents(
-        documents=documents,
-        embedding=get_embeddings(),
-        collection_name="financial_data",
-        persist_directory=DB_PATH,  # <--- This is the key to saving it on disk
-    )
-    print(f"SUCCESSFULLY SAVED to {DB_PATH}")
+    try:
+        vector_db = Chroma.from_documents(
+            documents=documents,
+            embedding=get_embeddings(),
+            collection_name="financial_data",
+            persist_directory=DB_PATH,
+        )
+        print(f"SUCCESSFULLY SAVED to {DB_PATH}")
+
+        # Windows Hygiene: Release the variable immediately
+        vector_db = None
+        del vector_db
+        gc.collect()
+
+    except Exception as e:
+        print(f"CRITICAL ERROR saving DB: {e}")
 
 
 def ask_financial_question(question: str):
