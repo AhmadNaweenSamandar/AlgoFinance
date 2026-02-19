@@ -29,120 +29,132 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
         import re
         from io import BytesIO
 
-        print(f"\n--- RBC SMART PARSER: {filename} ---")
+        print(f"\n--- RBC SPATIAL PARSER: {filename} ---")
 
         all_transactions = []
-
-        # State Tracking Variables
         current_date = "Unknown Date"
-        previous_balance = None
+
+        # State Tracking Flags
+        in_details_section = False
+        with_idx = -1
+        dep_idx = -1
 
         # Regex Patterns
         date_pattern = re.compile(r"^(\d{1,2}\s+[A-Za-z]{3}|[A-Za-z]{3}\s+\d{1,2})")
-        # Matches numbers like 12.34, 1,234.56, -50.00
-        money_pattern = re.compile(r"-?\d{1,3}(?:,\d{3})*\.\d{2}")
+        # Matches numbers like 1,234.56 or 12.34
+        money_pattern = re.compile(r"\d{1,3}(?:,\d{3})*\.\d{2}")
 
         with pdfplumber.open(BytesIO(contents)) as pdf:
-            for page_num, page in enumerate(pdf.pages):
-                # layout=True preserves physical spaces, making it easier to read
+            for page in pdf.pages:
+                # layout=True is CRITICAL here. It preserves the exact spaces
+                # so we know which column a number belongs to.
                 text = page.extract_text(layout=True)
                 if not text:
                     continue
 
-                lines = text.split("\n")
-
-                for line in lines:
-                    original_line = line.strip()
-                    if not original_line:
+                for line in text.split("\n"):
+                    # Do not strip the line yet! We need the physical spaces.
+                    if not line.strip():
                         continue
 
-                    # 1. Update the Date if present
-                    date_match = date_pattern.match(original_line)
-                    if date_match:
-                        current_date = date_match.group(1).strip()
-                        # Strip the date out so we can parse the rest of the line
-                        line_content = original_line[date_match.end() :].strip()
-                    else:
-                        # No date found. But it might be a 2nd transaction on the same day!
-                        line_content = original_line
-
-                    # Skip headers and noise
-                    if (
-                        "Opening Balance" in line_content
-                        or "Description" in line_content
-                        or "Total" in line_content
-                    ):
+                    # 1. THE SHIELD: Ignore everything until the details section
+                    # We remove spaces to catch "Details of youraccountactivity" safely
+                    if "detailsofyouraccountactivity" in line.lower().replace(" ", ""):
+                        in_details_section = True
+                        print("Found 'Details of your account activity' section.")
                         continue
 
-                    # 2. Find all money values in the line
-                    money_matches = money_pattern.findall(line_content)
+                    if not in_details_section:
+                        continue  # Ignore the Summary Section entirely!
 
-                    if len(money_matches) >= 1:
-                        try:
-                            # Convert string money to floats
-                            numbers = [float(m.replace(",", "")) for m in money_matches]
+                    # 2. COLUMN CALIBRATION: Find exact horizontal position of headers
+                    if "Withdrawals" in line and "Deposits" in line:
+                        with_idx = line.find("Withdrawals")
+                        dep_idx = line.find("Deposits")
+                        print(
+                            f"Column Positions -> Withdrawals: {with_idx}, Deposits: {dep_idx}"
+                        )
+                        continue
 
-                            # The last number on an RBC line is almost always the Balance
-                            current_balance = numbers[-1]
+                    # 3. TRANSACTION EXTRACTION
+                    if with_idx != -1:  # Ensure we calibrated the columns
 
-                            # 3. Extract Description (Everything before the first number)
-                            first_money_str = money_matches[0]
-                            desc_end_index = line_content.find(first_money_str)
-                            description = line_content[:desc_end_index].strip()
+                        # Skip the Opening and Closing balance lines
+                        if (
+                            "opening balance" in line.lower()
+                            or "closing balance" in line.lower()
+                        ):
+                            continue
 
-                            # Clean up weird spacing in description
-                            description = re.sub(r"\s+", " ", description)
+                        # Extract the Date
+                        line_stripped = line.strip()
+                        date_match = date_pattern.match(line_stripped)
 
-                            if not description:
-                                continue  # Skip lines that are just numbers
+                        if date_match:
+                            current_date = date_match.group(1).strip()
+                            # Find where the description starts (right after the date)
+                            desc_start_idx = line.find(current_date) + len(current_date)
+                        else:
+                            # Ghost Date (same day transaction)
+                            # Start reading description from the first non-space character
+                            desc_start_idx = len(line) - len(line.lstrip())
 
-                            # 4. BALANCE MATH (The Secret Weapon)
-                            # We determine the exact amount and sign by comparing balances
-                            amount = 0.0
-                            if previous_balance is not None:
-                                # New Balance - Old Balance = Transaction Amount
-                                # If balance goes up, it's a positive deposit!
-                                amount = round(current_balance - previous_balance, 2)
-                            else:
-                                # Fallback for the very first line where we don't have a previous balance
-                                if len(numbers) >= 2:
-                                    raw_amount = numbers[-2]
-                                    # Look for keywords to guess sign
-                                    if any(
-                                        word in description.lower()
-                                        for word in [
-                                            "deposit",
-                                            "benefit",
-                                            "pay",
-                                            "credit",
-                                            "refund",
-                                        ]
-                                    ):
-                                        amount = abs(raw_amount)
-                                    else:
-                                        amount = -abs(raw_amount)
+                        # Find all money amounts on this line and their exact string positions
+                        matches = list(money_pattern.finditer(line))
 
-                            # Save this balance for the next line's math
-                            previous_balance = current_balance
+                        if len(matches) >= 1:
+                            try:
+                                # The first number is ALWAYS the transaction amount.
+                                # The second number (if it exists) is the Balance, which we ignore.
+                                amount_match = matches[0]
+                                amount_str = amount_match.group()
+                                amount_pos = (
+                                    amount_match.start()
+                                )  # Physical horizontal location
 
-                            # Save the transaction
-                            all_transactions.append(
-                                {
-                                    "date": current_date,
-                                    "description": description,
-                                    "amount": amount,
-                                    "category": "Uncategorized",  # We let the LLM guess this later during chat
-                                }
-                            )
-                            print(
-                                f"Captured: {current_date} | Amount: ${amount} | Bal: ${current_balance} | {description[:25]}"
-                            )
+                                raw_amount = float(amount_str.replace(",", ""))
 
-                        except Exception as e:
-                            print(f"Parsing Error on line: {original_line} -> {e}")
+                                # COLUMN POSITION MATH
+                                # Is this number printed closer to the "Withdrawals" or "Deposits" header?
+                                dist_to_with = abs(amount_pos - with_idx)
+                                dist_to_dep = abs(amount_pos - dep_idx)
 
+                                if dist_to_with <= dist_to_dep:
+                                    # It's a Withdrawal (Expense)
+                                    final_amount = -abs(raw_amount)
+                                    col_type = "Withdrawal"
+                                else:
+                                    # It's a Deposit (Income)
+                                    final_amount = abs(raw_amount)
+                                    col_type = "Deposit"
+
+                                # Extract Description (Everything between the date and the amount)
+                                description = line[desc_start_idx:amount_pos].strip()
+
+                                # Clean up weird spacing in the description
+                                description = re.sub(r"\s+", " ", description)
+
+                                if not description:
+                                    continue
+
+                                all_transactions.append(
+                                    {
+                                        "date": current_date,
+                                        "description": description,
+                                        "amount": final_amount,
+                                        "category": "Uncategorized",
+                                    }
+                                )
+                                print(
+                                    f"[{current_date}] {col_type}: ${final_amount} | {description[:25]}"
+                                )
+
+                            except Exception as e:
+                                print(f"Parsing Error: {line.strip()} -> {e}")
+
+        # DataFrame Creation
         if not all_transactions:
-            print("CRITICAL: No transactions found.")
+            print("CRITICAL: No transactions found in the details section.")
             df = pd.DataFrame(columns=["date", "description", "amount", "category"])
         else:
             df = pd.DataFrame(all_transactions)
