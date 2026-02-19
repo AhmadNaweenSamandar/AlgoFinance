@@ -25,116 +25,124 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
     # --- NEW PDF LOGIC ---
 
     elif filename.endswith(".pdf"):
+        import pdfplumber
+        import re
+        from io import BytesIO
 
-        print(f"\n---RBC PDF PARSER: {filename} ---")
+        print(f"\n--- RBC SMART PARSER: {filename} ---")
 
         all_transactions = []
 
-        # PATTERN:
-        # 1. Date (Jan 01 or 01 Jan)
-        # 2. Description (anything until the last 3 numbers)
-        # 3. The Money Columns (look for 1 to 3 numbers at the end of the line)
+        # State Tracking Variables
+        current_date = "Unknown Date"
+        previous_balance = None
+
+        # Regex Patterns
         date_pattern = re.compile(r"^(\d{1,2}\s+[A-Za-z]{3}|[A-Za-z]{3}\s+\d{1,2})")
+        # Matches numbers like 12.34, 1,234.56, -50.00
+        money_pattern = re.compile(r"-?\d{1,3}(?:,\d{3})*\.\d{2}")
 
         with pdfplumber.open(BytesIO(contents)) as pdf:
             for page_num, page in enumerate(pdf.pages):
-                # Extract text line by line (preserving layout)
-                text = page.extract_text(x_tolerance=2, y_tolerance=2)
+                # layout=True preserves physical spaces, making it easier to read
+                text = page.extract_text(layout=True)
                 if not text:
                     continue
 
                 lines = text.split("\n")
 
                 for line in lines:
-                    line = line.strip()
+                    original_line = line.strip()
+                    if not original_line:
+                        continue
 
-                    # SKIP HEADERS/NOISE
+                    # 1. Update the Date if present
+                    date_match = date_pattern.match(original_line)
+                    if date_match:
+                        current_date = date_match.group(1).strip()
+                        # Strip the date out so we can parse the rest of the line
+                        line_content = original_line[date_match.end() :].strip()
+                    else:
+                        # No date found. But it might be a 2nd transaction on the same day!
+                        line_content = original_line
+
+                    # Skip headers and noise
                     if (
-                        "Opening Balance" in line
-                        or "Total" in line
-                        or "Account Number" in line
+                        "Opening Balance" in line_content
+                        or "Description" in line_content
+                        or "Total" in line_content
                     ):
                         continue
 
-                    # CHECK FOR DATE START
-                    match = date_pattern.match(line)
-                    if not match:
-                        continue  # Skip lines that don't start with a date
+                    # 2. Find all money values in the line
+                    money_matches = money_pattern.findall(line_content)
 
-                    try:
-                        # LOGIC: Split the line into tokens
-                        parts = line.split()
+                    if len(money_matches) >= 1:
+                        try:
+                            # Convert string money to floats
+                            numbers = [float(m.replace(",", "")) for m in money_matches]
 
-                        # The Date is usually the first 2 parts (e.g., "21" "Sep")
-                        txn_date = " ".join(parts[:2])
+                            # The last number on an RBC line is almost always the Balance
+                            current_balance = numbers[-1]
 
-                        # The Numbers are at the END.
-                        # RBC usually has 1 or 2 numbers at the end (Amount + Balance, or just Amount)
-                        # We iterate backwards to find the numbers.
+                            # 3. Extract Description (Everything before the first number)
+                            first_money_str = money_matches[0]
+                            desc_end_index = line_content.find(first_money_str)
+                            description = line_content[:desc_end_index].strip()
 
-                        numbers = []
-                        desc_end_index = len(parts)  # Default to end
+                            # Clean up weird spacing in description
+                            description = re.sub(r"\s+", " ", description)
 
-                        # Scan from end to find monetary values (e.g., 1,234.56 or -50.00)
-                        for i in range(len(parts) - 1, 1, -1):
-                            token = parts[i].replace(",", "")
-                            # Check if it looks like a number (allow negatives)
-                            if re.match(r"^-?\d+\.\d{2}$", token):
-                                numbers.insert(0, float(token))
-                                desc_end_index = i
+                            if not description:
+                                continue  # Skip lines that are just numbers
+
+                            # 4. BALANCE MATH (The Secret Weapon)
+                            # We determine the exact amount and sign by comparing balances
+                            amount = 0.0
+                            if previous_balance is not None:
+                                # New Balance - Old Balance = Transaction Amount
+                                # If balance goes up, it's a positive deposit!
+                                amount = round(current_balance - previous_balance, 2)
                             else:
-                                # Stop once we hit non-number text (the description)
-                                break
+                                # Fallback for the very first line where we don't have a previous balance
+                                if len(numbers) >= 2:
+                                    raw_amount = numbers[-2]
+                                    # Look for keywords to guess sign
+                                    if any(
+                                        word in description.lower()
+                                        for word in [
+                                            "deposit",
+                                            "benefit",
+                                            "pay",
+                                            "credit",
+                                            "refund",
+                                        ]
+                                    ):
+                                        amount = abs(raw_amount)
+                                    else:
+                                        amount = -abs(raw_amount)
 
-                        # Reconstruct Description
-                        description = " ".join(parts[2:desc_end_index])
+                            # Save this balance for the next line's math
+                            previous_balance = current_balance
 
-                        # DETERMINE AMOUNT (Logic for Withdrawals vs Deposits)
-                        # If we found 2 numbers: [TransactionAmount, Balance]
-                        # If we found 3 numbers: [Withdrawal, Deposit, Balance] (Rare for one line)
-                        # If we found 1 number:  [TransactionAmount] (Balance might be missing)
+                            # Save the transaction
+                            all_transactions.append(
+                                {
+                                    "date": current_date,
+                                    "description": description,
+                                    "amount": amount,
+                                    "category": "Uncategorized",  # We let the LLM guess this later during chat
+                                }
+                            )
+                            print(
+                                f"Captured: {current_date} | Amount: ${amount} | Bal: ${current_balance} | {description[:25]}"
+                            )
 
-                        amount = 0.0
+                        except Exception as e:
+                            print(f"Parsing Error on line: {original_line} -> {e}")
 
-                        if len(numbers) >= 1:
-                            # The first number found is the transaction amount
-                            raw_amount = numbers[0]
-
-                            # RBC TRICK: Withdrawals are positive numbers in the "Withdrawals" column.
-                            # We need to guess if it's a withdrawal or deposit based on column position
-                            # (hard with raw text) OR context.
-
-                            # HEURISTIC: If description has "Deposit" or "Credit", it's positive.
-                            # Otherwise, assume it's an expense (Negative).
-                            if (
-                                "deposit" in description.lower()
-                                or "credit" in description.lower()
-                                or "refund" in description.lower()
-                            ):
-                                amount = abs(raw_amount)
-                            else:
-                                amount = -abs(raw_amount)  # Force negative for expenses
-
-                        # Add to list
-                        all_transactions.append(
-                            {
-                                "date": txn_date,
-                                "description": description,
-                                "amount": amount,
-                                "category": "Uncategorized",
-                            }
-                        )
-                        print(
-                            f"Captured: {txn_date} | ${amount} | {description[:30]}..."
-                        )
-
-                    except Exception as e:
-                        print(f"Parsing Error on line: {line} -> {e}")
-
-        # Final Validation
         if not all_transactions:
             print("CRITICAL: No transactions found.")
-            # Create empty DF with correct columns to prevent crash
             df = pd.DataFrame(columns=["date", "description", "amount", "category"])
         else:
             df = pd.DataFrame(all_transactions)
