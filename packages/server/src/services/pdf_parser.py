@@ -3,6 +3,7 @@ from fastapi import UploadFile
 import numpy as np
 from io import BytesIO
 import pdfplumber
+import re
 
 
 # function to extract data from uploaded files
@@ -24,115 +25,120 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
     # --- NEW PDF LOGIC ---
 
     elif filename.endswith(".pdf"):
-        import pdfplumber
-        from io import BytesIO
 
-        print(f"\n---SMART SCAN: PARSING PDF {filename} ---")
+        print(f"\n---RBC PDF PARSER: {filename} ---")
 
-        all_rows = []
-        found_transaction_table = False
+        all_transactions = []
+
+        # PATTERN:
+        # 1. Date (Jan 01 or 01 Jan)
+        # 2. Description (anything until the last 3 numbers)
+        # 3. The Money Columns (look for 1 to 3 numbers at the end of the line)
+        date_pattern = re.compile(r"^(\d{1,2}\s+[A-Za-z]{3}|[A-Za-z]{3}\s+\d{1,2})")
 
         with pdfplumber.open(BytesIO(contents)) as pdf:
-            # We will use "text" strategy because bank statements rarely have gridlines
-            table_settings = {
-                "vertical_strategy": "text",
-                "horizontal_strategy": "text",
-                "snap_tolerance": 3,
-            }
-
             for page_num, page in enumerate(pdf.pages):
-                print(f"Scanning Page {page_num + 1}...")
+                # Extract text line by line (preserving layout)
+                text = page.extract_text(x_tolerance=2, y_tolerance=2)
+                if not text:
+                    continue
 
-                # key change: extract_tables() returns a LIST of all tables on the page
-                tables = page.extract_tables(table_settings)
+                lines = text.split("\n")
 
-                for table_index, table in enumerate(tables):
-                    if not table:
+                for line in lines:
+                    line = line.strip()
+
+                    # SKIP HEADERS/NOISE
+                    if (
+                        "Opening Balance" in line
+                        or "Total" in line
+                        or "Account Number" in line
+                    ):
                         continue
 
-                    # --- VALIDATION: Is this a transaction table? ---
-                    # We check the first 5 rows of EACH table to see if it has our keywords
-                    is_target_table = False
+                    # CHECK FOR DATE START
+                    match = date_pattern.match(line)
+                    if not match:
+                        continue  # Skip lines that don't start with a date
 
-                    # Flatten the table to text to search quickly
-                    # We look for "Date" AND ("Description" OR "Amount" OR "Balance")
-                    for row in table[:5]:  # Check header area of this specific table
-                        row_str = " ".join([str(cell).lower() for cell in row if cell])
+                    try:
+                        # LOGIC: Split the line into tokens
+                        parts = line.split()
 
-                        if "date" in row_str and (
-                            "description" in row_str
-                            or "details" in row_str
-                            or "amount" in row_str
-                            or "balance" in row_str
-                            or "withdrawals" in row_str
-                        ):
-                            is_target_table = True
-                            found_transaction_table = True
-                            print(f"FOUND TRANSACTION TABLE (Table #{table_index})")
-                            break
+                        # The Date is usually the first 2 parts (e.g., "21" "Sep")
+                        txn_date = " ".join(parts[:2])
 
-                    # If this is the "Noise" table (Address, Logo), SKIP IT
-                    if not is_target_table:
-                        print(f"Skipping Table #{table_index} (Likely Header/Summary)")
-                        continue
+                        # The Numbers are at the END.
+                        # RBC usually has 1 or 2 numbers at the end (Amount + Balance, or just Amount)
+                        # We iterate backwards to find the numbers.
 
-                    # If we found the right table, add its rows!
-                    # Clean rows: Remove empty lists or rows with all None
-                    cleaned = [
-                        row
-                        for row in table
-                        if row and any(cell and str(cell).strip() for cell in row)
-                    ]
-                    all_rows.extend(cleaned)
+                        numbers = []
+                        desc_end_index = len(parts)  # Default to end
 
-        if not found_transaction_table:
-            print("CRITICAL: Scanned all pages but found NO transaction table.")
-            # Fallback: If strict scanning failed, try to grab the LARGEST table found
-            # (we can implement this later if needed, but usually the scan works)
-            raise ValueError("Could not find a valid transaction table in this PDF.")
+                        # Scan from end to find monetary values (e.g., 1,234.56 or -50.00)
+                        for i in range(len(parts) - 1, 1, -1):
+                            token = parts[i].replace(",", "")
+                            # Check if it looks like a number (allow negatives)
+                            if re.match(r"^-?\d+\.\d{2}$", token):
+                                numbers.insert(0, float(token))
+                                desc_end_index = i
+                            else:
+                                # Stop once we hit non-number text (the description)
+                                break
 
-        # --- HEADER HUNTER (Standard) ---
-        print(f"Extracted {len(all_rows)} potential transaction rows.")
+                        # Reconstruct Description
+                        description = " ".join(parts[2:desc_end_index])
 
-        header_index = -1
-        target_keywords = {
-            "date",
-            "description",
-            "details",
-            "amount",
-            "withdrawals",
-            "deposits",
-            "balance",
-        }
+                        # DETERMINE AMOUNT (Logic for Withdrawals vs Deposits)
+                        # If we found 2 numbers: [TransactionAmount, Balance]
+                        # If we found 3 numbers: [Withdrawal, Deposit, Balance] (Rare for one line)
+                        # If we found 1 number:  [TransactionAmount] (Balance might be missing)
 
-        for i, row in enumerate(all_rows[:10]):
-            row_text = set(str(cell).lower() for cell in row if cell)
-            if len(row_text.intersection(target_keywords)) >= 2:
-                header_index = i
-                break
+                        amount = 0.0
 
-        if header_index == -1:
-            print("No header row found in extracted data. Using Row 0.")
-            header_index = 0
+                        if len(numbers) >= 1:
+                            # The first number found is the transaction amount
+                            raw_amount = numbers[0]
 
-        # --- DATAFRAME CREATION ---
-        headers = [
-            str(h).strip() if h else f"col_{j}"
-            for j, h in enumerate(all_rows[header_index])
-        ]
-        data = all_rows[header_index + 1 :]
+                            # RBC TRICK: Withdrawals are positive numbers in the "Withdrawals" column.
+                            # We need to guess if it's a withdrawal or deposit based on column position
+                            # (hard with raw text) OR context.
 
-        # Normalize row lengths
-        max_cols = len(headers)
-        normalized_data = []
-        for row in data:
-            # Ensure row length matches header length
-            if len(row) < max_cols:
-                row = row + [None] * (max_cols - len(row))
-            normalized_data.append(row[:max_cols])
+                            # HEURISTIC: If description has "Deposit" or "Credit", it's positive.
+                            # Otherwise, assume it's an expense (Negative).
+                            if (
+                                "deposit" in description.lower()
+                                or "credit" in description.lower()
+                                or "refund" in description.lower()
+                            ):
+                                amount = abs(raw_amount)
+                            else:
+                                amount = -abs(raw_amount)  # Force negative for expenses
 
-        df = pd.DataFrame(normalized_data, columns=headers)
-        print(f"PDF DataFrame Created Successfully: {df.shape}")
+                        # Add to list
+                        all_transactions.append(
+                            {
+                                "date": txn_date,
+                                "description": description,
+                                "amount": amount,
+                                "category": "Uncategorized",
+                            }
+                        )
+                        print(
+                            f"Captured: {txn_date} | ${amount} | {description[:30]}..."
+                        )
+
+                    except Exception as e:
+                        print(f"Parsing Error on line: {line} -> {e}")
+
+        # Final Validation
+        if not all_transactions:
+            print("CRITICAL: No transactions found.")
+            # Create empty DF with correct columns to prevent crash
+            df = pd.DataFrame(columns=["date", "description", "amount", "category"])
+        else:
+            df = pd.DataFrame(all_transactions)
+            print(f"SUCCESS: Extracted {len(df)} transactions.")
 
     else:
         raise ValueError("Unsupported file type")
