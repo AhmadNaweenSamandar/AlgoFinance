@@ -21,9 +21,11 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
         # Pandas can read Excel directly
         df = pd.read_excel(BytesIO(contents))
 
-        # --- NEW PDF LOGIC ---
+    # --- NEW PDF LOGIC ---
+
     elif filename.endswith(".pdf"):
         # We need to save the bytes to a temporary file because pdfplumber expects a path or file-like object
+        print(f"\n--- DIAGNOSTIC: PARSING PDF {filename} ---")
         with pdfplumber.open(BytesIO(contents)) as pdf:
             all_rows = []
 
@@ -33,65 +35,68 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
             table_settings = {
                 "vertical_strategy": "text",
                 "horizontal_strategy": "text",
-                "intersection_y_tolerance": 10,
+                "snap_tolerance": 3,
             }
 
             # Iterate through every page of the bank statement
-            for page in pdf.pages:
+            for page_num, page in enumerate(pdf.pages):
                 # extract_table() attempts to find the largest table on the page
-                table = page.extract_table()
+                table = page.extract_table(table_settings)
 
                 # 3. If standard fails, try the "Borderless" settings
                 if not table:
-                    table = page.extract_table(table_settings)
+                    table = page.extract_table()
 
                 if table:
-                    # Clean rows immediately (remove empty lists/None)
-                    cleaned_table = [row for row in table if row and any(row)]
-                    all_rows.extend(cleaned_table)
+                    # Filter out purely empty rows
+                    cleaned = [
+                        row
+                        for row in table
+                        if row and any(cell and str(cell).strip() for cell in row)
+                    ]
+                    all_rows.extend(cleaned)
+                    print(f"Page {page_num+1}: Extracted {len(cleaned)} rows.")
 
             if not all_rows:
-                # 4. Emergency Fallback: If tables fail entirely, read raw text
-                # This prevents the crash and allows at least SOME debugging
-                print("No tables found. Attempting raw text fallback...")
-                text_content = []
-                for page in pdf.pages:
-                    text = page.extract_text()
-                    if text:
-                        text_content.append(text)
-
-                if text_content:
-                    # Return a dummy DF with the raw text so you can see it
-                    return pd.DataFrame(
-                        {"description": text_content, "amount": [0] * len(text_content)}
-                    )
-
-                raise ValueError("Could not extract any table OR text from this PDF.")
+                print("CRITICAL: No rows extracted from PDF.")
+                raise ValueError("Could not extract any table data from this PDF.")
 
             # --- HEADER HUNTER LOGIC (CRITICAL FIX) ---
             # We look for the row that contains keywords like "Date", "Description", "Amount"
+            print("\n👀 INSPECTING FIRST 10 ROWS FOR HEADER:")
             header_index = -1
             found_header = False
 
             # Common headers we expect to see
             target_keywords = {
                 "date",
+                "trans",
                 "description",
                 "details",
                 "amount",
                 "debit",
                 "credit",
                 "payment",
-                "withdrawal",
+                "withdrawals",
+                "deposits",
+                "balance",
             }
 
             # Scan the first 10 rows (Headers usually aren't lower than that)
-            for i, row in enumerate(all_rows[:20]):
-                # Convert row to lowercase set for fast matching
-                row_text = set(str(cell).lower() for cell in row if cell)
+            for i, row in enumerate(all_rows[:10]):
+                # Create a normalized list of the row's text
+                # We strip spaces and ignore None values
+                row_text_list = [str(cell).strip().lower() for cell in row if cell]
+                row_text_set = set(row_text_list)
 
-                # If we find at least 2 keywords (e.g., "Date" and "Amount"), we found the header!
-                if len(row_text.intersection(target_keywords)) >= 2:
+                print(f"[Row {i}]: {row_text_list}")  # <--- LOOK THIS IN TERMINAL
+
+                # Check for intersection
+                matches = row_text_set.intersection(target_keywords)
+
+                # Rule: Found if at least 2 keywords match OR we find 'date' and 'amount' specifically
+                if len(matches) >= 2:
+                    print(f"HEADER FOUND at Row {i}! Matched keywords: {matches}")
                     header_index = i
                     found_header = True
                     break
@@ -103,24 +108,28 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
 
             # Create DataFrame starting from the identified header row
             headers = all_rows[header_index]
+
+            # Ensure headers are strings and handle None
+            headers = [
+                str(h).strip() if h else f"col_{j}" for j, h in enumerate(headers)
+            ]
+
             data = all_rows[header_index + 1 :]
 
             # Handle mismatch in column counts (common in PDF parsing)
             # If a row has more/less columns than header, normalize it
+            # Normalize row lengths
+            max_cols = len(headers)
             normalized_data = []
-            expected_cols = len(headers)
-
             for row in data:
-                if len(row) == expected_cols:
-                    normalized_data.append(row)
-                elif len(row) < expected_cols:
-                    # Pad with None
-                    normalized_data.append(row + [None] * (expected_cols - len(row)))
-                else:
-                    # Truncate (or merge last columns if needed)
-                    normalized_data.append(row[:expected_cols])
+                # Pad with None if short
+                if len(row) < max_cols:
+                    row = row + [None] * (max_cols - len(row))
+                # Truncate if long
+                normalized_data.append(row[:max_cols])
 
             df = pd.DataFrame(normalized_data, columns=headers)
+            print(f"PDF DataFrame Created: {df.shape}")
 
     else:
         raise ValueError("Unsupported file type")
