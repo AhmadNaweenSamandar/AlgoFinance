@@ -24,112 +24,115 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
     # --- NEW PDF LOGIC ---
 
     elif filename.endswith(".pdf"):
-        # We need to save the bytes to a temporary file because pdfplumber expects a path or file-like object
-        print(f"\n--- DIAGNOSTIC: PARSING PDF {filename} ---")
-        with pdfplumber.open(BytesIO(contents)) as pdf:
-            all_rows = []
+        import pdfplumber
+        from io import BytesIO
 
-            # 1. Define "Loose" Settings for Borderless Tables
-            # "vertical_strategy": "text" -> Look for gaps in text to find columns
-            # "horizontal_strategy": "text" -> Look for gaps in text to find rows
+        print(f"\n---SMART SCAN: PARSING PDF {filename} ---")
+
+        all_rows = []
+        found_transaction_table = False
+
+        with pdfplumber.open(BytesIO(contents)) as pdf:
+            # We will use "text" strategy because bank statements rarely have gridlines
             table_settings = {
                 "vertical_strategy": "text",
                 "horizontal_strategy": "text",
                 "snap_tolerance": 3,
             }
 
-            # Iterate through every page of the bank statement
             for page_num, page in enumerate(pdf.pages):
-                # extract_table() attempts to find the largest table on the page
-                table = page.extract_table(table_settings)
+                print(f"Scanning Page {page_num + 1}...")
 
-                # 3. If standard fails, try the "Borderless" settings
-                if not table:
-                    table = page.extract_table()
+                # key change: extract_tables() returns a LIST of all tables on the page
+                tables = page.extract_tables(table_settings)
 
-                if table:
-                    # Filter out purely empty rows
+                for table_index, table in enumerate(tables):
+                    if not table:
+                        continue
+
+                    # --- VALIDATION: Is this a transaction table? ---
+                    # We check the first 5 rows of EACH table to see if it has our keywords
+                    is_target_table = False
+
+                    # Flatten the table to text to search quickly
+                    # We look for "Date" AND ("Description" OR "Amount" OR "Balance")
+                    for row in table[:5]:  # Check header area of this specific table
+                        row_str = " ".join([str(cell).lower() for cell in row if cell])
+
+                        if "date" in row_str and (
+                            "description" in row_str
+                            or "details" in row_str
+                            or "amount" in row_str
+                            or "balance" in row_str
+                            or "withdrawals" in row_str
+                        ):
+                            is_target_table = True
+                            found_transaction_table = True
+                            print(f"FOUND TRANSACTION TABLE (Table #{table_index})")
+                            break
+
+                    # If this is the "Noise" table (Address, Logo), SKIP IT
+                    if not is_target_table:
+                        print(f"Skipping Table #{table_index} (Likely Header/Summary)")
+                        continue
+
+                    # If we found the right table, add its rows!
+                    # Clean rows: Remove empty lists or rows with all None
                     cleaned = [
                         row
                         for row in table
                         if row and any(cell and str(cell).strip() for cell in row)
                     ]
                     all_rows.extend(cleaned)
-                    print(f"Page {page_num+1}: Extracted {len(cleaned)} rows.")
 
-            if not all_rows:
-                print("CRITICAL: No rows extracted from PDF.")
-                raise ValueError("Could not extract any table data from this PDF.")
+        if not found_transaction_table:
+            print("CRITICAL: Scanned all pages but found NO transaction table.")
+            # Fallback: If strict scanning failed, try to grab the LARGEST table found
+            # (we can implement this later if needed, but usually the scan works)
+            raise ValueError("Could not find a valid transaction table in this PDF.")
 
-            # --- HEADER HUNTER LOGIC (CRITICAL FIX) ---
-            # We look for the row that contains keywords like "Date", "Description", "Amount"
-            print("\n👀 INSPECTING FIRST 10 ROWS FOR HEADER:")
-            header_index = -1
-            found_header = False
+        # --- HEADER HUNTER (Standard) ---
+        print(f"Extracted {len(all_rows)} potential transaction rows.")
 
-            # Common headers we expect to see
-            target_keywords = {
-                "date",
-                "trans",
-                "description",
-                "details",
-                "amount",
-                "debit",
-                "credit",
-                "payment",
-                "withdrawals",
-                "deposits",
-                "balance",
-            }
+        header_index = -1
+        target_keywords = {
+            "date",
+            "description",
+            "details",
+            "amount",
+            "withdrawals",
+            "deposits",
+            "balance",
+        }
 
-            # Scan the first 10 rows (Headers usually aren't lower than that)
-            for i, row in enumerate(all_rows[:10]):
-                # Create a normalized list of the row's text
-                # We strip spaces and ignore None values
-                row_text_list = [str(cell).strip().lower() for cell in row if cell]
-                row_text_set = set(row_text_list)
+        for i, row in enumerate(all_rows[:10]):
+            row_text = set(str(cell).lower() for cell in row if cell)
+            if len(row_text.intersection(target_keywords)) >= 2:
+                header_index = i
+                break
 
-                print(f"[Row {i}]: {row_text_list}")  # <--- LOOK THIS IN TERMINAL
+        if header_index == -1:
+            print("No header row found in extracted data. Using Row 0.")
+            header_index = 0
 
-                # Check for intersection
-                matches = row_text_set.intersection(target_keywords)
+        # --- DATAFRAME CREATION ---
+        headers = [
+            str(h).strip() if h else f"col_{j}"
+            for j, h in enumerate(all_rows[header_index])
+        ]
+        data = all_rows[header_index + 1 :]
 
-                # Rule: Found if at least 2 keywords match OR we find 'date' and 'amount' specifically
-                if len(matches) >= 2:
-                    print(f"HEADER FOUND at Row {i}! Matched keywords: {matches}")
-                    header_index = i
-                    found_header = True
-                    break
+        # Normalize row lengths
+        max_cols = len(headers)
+        normalized_data = []
+        for row in data:
+            # Ensure row length matches header length
+            if len(row) < max_cols:
+                row = row + [None] * (max_cols - len(row))
+            normalized_data.append(row[:max_cols])
 
-            if not found_header:
-                # Fallback: Assume the first row is the header if we can't find one
-                print("No header found. Using first row.")
-                header_index = 0
-
-            # Create DataFrame starting from the identified header row
-            headers = all_rows[header_index]
-
-            # Ensure headers are strings and handle None
-            headers = [
-                str(h).strip() if h else f"col_{j}" for j, h in enumerate(headers)
-            ]
-
-            data = all_rows[header_index + 1 :]
-
-            # Handle mismatch in column counts (common in PDF parsing)
-            # If a row has more/less columns than header, normalize it
-            # Normalize row lengths
-            max_cols = len(headers)
-            normalized_data = []
-            for row in data:
-                # Pad with None if short
-                if len(row) < max_cols:
-                    row = row + [None] * (max_cols - len(row))
-                # Truncate if long
-                normalized_data.append(row[:max_cols])
-
-            df = pd.DataFrame(normalized_data, columns=headers)
-            print(f"PDF DataFrame Created: {df.shape}")
+        df = pd.DataFrame(normalized_data, columns=headers)
+        print(f"PDF DataFrame Created Successfully: {df.shape}")
 
     else:
         raise ValueError("Unsupported file type")
