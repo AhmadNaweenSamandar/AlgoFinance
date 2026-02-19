@@ -48,19 +48,19 @@ def force_delete_folder(path):
             print(f"Successfully deleted {path}")
             return
         except PermissionError:
-            print(f"⚠️ Windows Lock detected on {path}. Waiting 1s to retry...")
+            print(f"Windows Lock detected on {path}. Waiting 1s to retry...")
             time.sleep(1)
         except Exception as e:
             print(f"Error deleting {path}: {e}")
             return
 
     print(
-        "❌ Could not delete folder after 3 attempts. Proceeding anyway (might cause issues)."
+        "Could not delete folder after 3 attempts. Proceeding anyway (might cause issues)."
     )
 
 
 def process_data_for_chat(df: pd.DataFrame):
-    print("\n--- 🔍 DIAGNOSTIC: DATA INGESTION ---")
+    print("\n--- DIAGNOSTIC: DATA INGESTION ---")
 
     # 1. Print the Raw Columns found in the Excel file
     print(f"Columns Found in Excel: {list(df.columns)}")
@@ -110,7 +110,7 @@ def process_data_for_chat(df: pd.DataFrame):
         return
 
     # 6. Save to Disk
-    print(f"💾 Saving {len(documents)} documents to {DB_PATH}...")
+    print(f"Saving {len(documents)} documents to {DB_PATH}...")
     try:
         vector_db = Chroma.from_documents(
             documents=documents,
