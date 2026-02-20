@@ -25,116 +25,101 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
     # --- NEW PDF LOGIC ---
 
     elif filename.endswith(".pdf"):
-        import pdfplumber
-        import re
-        from io import BytesIO
-
-        print(f"\n--- RBC SPATIAL PARSER: {filename} ---")
 
         all_transactions = []
         current_date = "Unknown Date"
 
-        # State Tracking Flags
         in_details_section = False
         with_idx = -1
         dep_idx = -1
 
-        # Regex Patterns
-        date_pattern = re.compile(r"^(\d{1,2}\s+[A-Za-z]{3}|[A-Za-z]{3}\s+\d{1,2})")
-        # Matches numbers like 1,234.56 or 12.34
+        # Regex for dates like "23Dec" or "9 Jan"
+        date_pattern = re.compile(r"^(\d{1,2}\s*[a-zA-Z]{3,4})")
         money_pattern = re.compile(r"\d{1,3}(?:,\d{3})*\.\d{2}")
 
         with pdfplumber.open(BytesIO(contents)) as pdf:
             for page in pdf.pages:
-                # layout=True is CRITICAL here. It preserves the exact spaces
-                # so we know which column a number belongs to.
                 text = page.extract_text(layout=True)
                 if not text:
                     continue
 
                 for line in text.split("\n"):
-                    # Do not strip the line yet! We need the physical spaces.
                     if not line.strip():
                         continue
 
-                    # 1. THE SHIELD: Ignore everything until the details section
-                    # We remove spaces to catch "Details of youraccountactivity" safely
-                    if "detailsofyouraccountactivity" in line.lower().replace(" ", ""):
+                    line_no_spaces = line.lower().replace(" ", "")
+
+                    # 1. Detect the start of the transactions
+                    if "detailsofyouraccountactivity" in line_no_spaces:
                         in_details_section = True
-                        print("Found 'Details of your account activity' section.")
                         continue
 
-                    if not in_details_section:
-                        continue  # Ignore the Summary Section entirely!
-
-                    # 2. COLUMN CALIBRATION: Find exact horizontal position of headers
-                    if "Withdrawals" in line and "Deposits" in line:
+                    # 2. Calibrate columns
+                    if (
+                        in_details_section
+                        and "Withdrawals" in line
+                        and "Deposits" in line
+                    ):
                         with_idx = line.find("Withdrawals")
                         dep_idx = line.find("Deposits")
-                        print(
-                            f"Column Positions -> Withdrawals: {with_idx}, Deposits: {dep_idx}"
-                        )
                         continue
 
-                    # 3. TRANSACTION EXTRACTION
-                    if with_idx != -1:  # Ensure we calibrated the columns
+                    # 3. Extract Transactions
+                    if in_details_section and with_idx != -1:
 
-                        # Skip the Opening and Closing balance lines
+                        # THE SHIELD: Ignore the summary balances so they don't inflate totals
                         if (
-                            "opening balance" in line.lower()
-                            or "closing balance" in line.lower()
+                            "openingbalance" in line_no_spaces
+                            or "closingbalance" in line_no_spaces
+                            or "summary" in line_no_spaces
                         ):
                             continue
 
-                        # Extract the Date
                         line_stripped = line.strip()
                         date_match = date_pattern.match(line_stripped)
 
                         if date_match:
-                            current_date = date_match.group(1).strip()
-                            # Find where the description starts (right after the date)
-                            desc_start_idx = line.find(current_date) + len(current_date)
+                            raw_date = date_match.group(1).strip()
+                            # Make it pretty: "23Dec" -> "23 Dec"
+                            current_date = re.sub(
+                                r"(\d+)([a-zA-Z]+)", r"\1 \2", raw_date
+                            )
+
+                            orig_date_match = re.search(
+                                r"\d{1,2}\s*[a-zA-Z]{3,4}", line
+                            )
+                            desc_start_idx = (
+                                orig_date_match.end()
+                                if orig_date_match
+                                else line.find(raw_date) + len(raw_date)
+                            )
                         else:
-                            # Ghost Date (same day transaction)
-                            # Start reading description from the first non-space character
+                            # Ghost Date (Multiple transactions on one day)
                             desc_start_idx = len(line) - len(line.lstrip())
 
-                        # Find all money amounts on this line and their exact string positions
                         matches = list(money_pattern.finditer(line))
 
                         if len(matches) >= 1:
                             try:
-                                # The first number is ALWAYS the transaction amount.
-                                # The second number (if it exists) is the Balance, which we ignore.
                                 amount_match = matches[0]
                                 amount_str = amount_match.group()
-                                amount_pos = (
-                                    amount_match.start()
-                                )  # Physical horizontal location
+                                amount_pos = amount_match.start()
 
                                 raw_amount = float(amount_str.replace(",", ""))
 
-                                # COLUMN POSITION MATH
-                                # Is this number printed closer to the "Withdrawals" or "Deposits" header?
+                                # Spatial Math: Is it under Withdrawals or Deposits?
                                 dist_to_with = abs(amount_pos - with_idx)
                                 dist_to_dep = abs(amount_pos - dep_idx)
 
                                 if dist_to_with <= dist_to_dep:
-                                    # It's a Withdrawal (Expense)
-                                    final_amount = -abs(raw_amount)
-                                    col_type = "Withdrawal"
+                                    final_amount = -abs(raw_amount)  # Expense
                                 else:
-                                    # It's a Deposit (Income)
-                                    final_amount = abs(raw_amount)
-                                    col_type = "Deposit"
+                                    final_amount = abs(raw_amount)  # Income
 
-                                # Extract Description (Everything between the date and the amount)
                                 description = line[desc_start_idx:amount_pos].strip()
-
-                                # Clean up weird spacing in the description
                                 description = re.sub(r"\s+", " ", description)
 
-                                if not description:
+                                if not description or len(description) < 2:
                                     continue
 
                                 all_transactions.append(
@@ -145,20 +130,15 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
                                         "category": "Uncategorized",
                                     }
                                 )
-                                print(
-                                    f"[{current_date}] {col_type}: ${final_amount} | {description[:25]}"
-                                )
 
                             except Exception as e:
                                 print(f"Parsing Error: {line.strip()} -> {e}")
 
-        # DataFrame Creation
+        # Return the clean DataFrame
         if not all_transactions:
-            print("CRITICAL: No transactions found in the details section.")
-            df = pd.DataFrame(columns=["date", "description", "amount", "category"])
+            return pd.DataFrame(columns=["date", "description", "amount", "category"])
         else:
-            df = pd.DataFrame(all_transactions)
-            print(f"SUCCESS: Extracted {len(df)} transactions.")
+            return pd.DataFrame(all_transactions)
 
     else:
         raise ValueError("Unsupported file type")
