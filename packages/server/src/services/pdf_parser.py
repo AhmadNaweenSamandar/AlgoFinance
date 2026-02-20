@@ -25,120 +25,158 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
     # --- NEW PDF LOGIC ---
 
     elif filename.endswith(".pdf"):
-
-        print(f"\n---RBC PDF PARSER: {filename} ---")
+        from datetime import datetime
 
         all_transactions = []
+        current_date = "Unknown Date"
 
-        # PATTERN:
-        # 1. Date (Jan 01 or 01 Jan)
-        # 2. Description (anything until the last 3 numbers)
-        # 3. The Money Columns (look for 1 to 3 numbers at the end of the line)
-        date_pattern = re.compile(r"^(\d{1,2}\s+[A-Za-z]{3}|[A-Za-z]{3}\s+\d{1,2})")
+        in_details_section = False
+        with_idx = -1
+        dep_idx = -1
+
+        # THE ANCHOR: Default to today, but we will overwrite this from the PDF
+        statement_year = datetime.now().year
+        statement_month = datetime.now().month
+
+        month_map = {
+            "jan": 1,
+            "feb": 2,
+            "mar": 3,
+            "apr": 4,
+            "may": 5,
+            "jun": 6,
+            "jul": 7,
+            "aug": 8,
+            "sep": 9,
+            "oct": 10,
+            "nov": 11,
+            "dec": 12,
+        }
+
+        date_pattern = re.compile(r"^(\d{1,2}\s*[a-zA-Z]{3,4})")
+        money_pattern = re.compile(r"\d{1,3}(?:,\d{3})*\.\d{2}")
 
         with pdfplumber.open(BytesIO(contents)) as pdf:
-            for page_num, page in enumerate(pdf.pages):
-                # Extract text line by line (preserving layout)
-                text = page.extract_text(x_tolerance=2, y_tolerance=2)
+            for page in pdf.pages:
+                text = page.extract_text(layout=True)
                 if not text:
                     continue
 
-                lines = text.split("\n")
-
-                for line in lines:
-                    line = line.strip()
-
-                    # SKIP HEADERS/NOISE
-                    if (
-                        "Opening Balance" in line
-                        or "Total" in line
-                        or "Account Number" in line
-                    ):
+                for line in text.split("\n"):
+                    if not line.strip():
                         continue
+                    line_no_spaces = line.lower().replace(" ", "")
 
-                    # CHECK FOR DATE START
-                    match = date_pattern.match(line)
-                    if not match:
-                        continue  # Skip lines that don't start with a date
-
-                    try:
-                        # LOGIC: Split the line into tokens
-                        parts = line.split()
-
-                        # The Date is usually the first 2 parts (e.g., "21" "Sep")
-                        txn_date = " ".join(parts[:2])
-
-                        # The Numbers are at the END.
-                        # RBC usually has 1 or 2 numbers at the end (Amount + Balance, or just Amount)
-                        # We iterate backwards to find the numbers.
-
-                        numbers = []
-                        desc_end_index = len(parts)  # Default to end
-
-                        # Scan from end to find monetary values (e.g., 1,234.56 or -50.00)
-                        for i in range(len(parts) - 1, 1, -1):
-                            token = parts[i].replace(",", "")
-                            # Check if it looks like a number (allow negatives)
-                            if re.match(r"^-?\d+\.\d{2}$", token):
-                                numbers.insert(0, float(token))
-                                desc_end_index = i
-                            else:
-                                # Stop once we hit non-number text (the description)
+                    # ---1. EXTRACT THE ANCHOR YEAR ---
+                    if "closingbalanceon" in line_no_spaces:
+                        year_match = re.search(r"(20\d{2})", line)
+                        if year_match:
+                            statement_year = int(year_match.group(1))
+                        # Find the statement month (e.g., 'jan' in 'january21')
+                        for m_name, m_num in month_map.items():
+                            if m_name in line_no_spaces:
+                                statement_month = m_num
                                 break
 
-                        # Reconstruct Description
-                        description = " ".join(parts[2:desc_end_index])
+                    if "detailsofyouraccountactivity" in line_no_spaces:
+                        in_details_section = True
+                        continue
 
-                        # DETERMINE AMOUNT (Logic for Withdrawals vs Deposits)
-                        # If we found 2 numbers: [TransactionAmount, Balance]
-                        # If we found 3 numbers: [Withdrawal, Deposit, Balance] (Rare for one line)
-                        # If we found 1 number:  [TransactionAmount] (Balance might be missing)
+                    if (
+                        in_details_section
+                        and "Withdrawals" in line
+                        and "Deposits" in line
+                    ):
+                        with_idx = line.find("Withdrawals")
+                        dep_idx = line.find("Deposits")
+                        continue
 
-                        amount = 0.0
+                    if in_details_section and with_idx != -1:
+                        if (
+                            "openingbalance" in line_no_spaces
+                            or "closingbalance" in line_no_spaces
+                            or "summary" in line_no_spaces
+                        ):
+                            continue
 
-                        if len(numbers) >= 1:
-                            # The first number found is the transaction amount
-                            raw_amount = numbers[0]
+                        line_stripped = line.strip()
+                        date_match = date_pattern.match(line_stripped)
 
-                            # RBC TRICK: Withdrawals are positive numbers in the "Withdrawals" column.
-                            # We need to guess if it's a withdrawal or deposit based on column position
-                            # (hard with raw text) OR context.
+                        if date_match:
+                            raw_date = date_match.group(1).strip()
 
-                            # HEURISTIC: If description has "Deposit" or "Credit", it's positive.
-                            # Otherwise, assume it's an expense (Negative).
-                            if (
-                                "deposit" in description.lower()
-                                or "credit" in description.lower()
-                                or "refund" in description.lower()
-                            ):
-                                amount = abs(raw_amount)
-                            else:
-                                amount = -abs(raw_amount)  # Force negative for expenses
+                            # ---2. RECONSTRUCT PERFECT ISO DATES ---
+                            txn_day_match = re.search(r"\d{1,2}", raw_date)
+                            txn_month_match = re.search(r"[a-zA-Z]{3}", raw_date)
 
-                        # Add to list
-                        all_transactions.append(
-                            {
-                                "date": txn_date,
-                                "description": description,
-                                "amount": amount,
-                                "category": "Uncategorized",
-                            }
-                        )
-                        print(
-                            f"Captured: {txn_date} | ${amount} | {description[:30]}..."
-                        )
+                            if txn_day_match and txn_month_match:
+                                txn_day = int(txn_day_match.group())
+                                txn_month_str = txn_month_match.group().lower()
+                                txn_month = month_map.get(
+                                    txn_month_str, statement_month
+                                )
 
-                    except Exception as e:
-                        print(f"Parsing Error on line: {line} -> {e}")
+                                # Cross-Year Logic: If statement is Jan and txn is Dec, txn is from last year
+                                if txn_month > statement_month:
+                                    txn_year = statement_year - 1
+                                else:
+                                    txn_year = statement_year
 
-        # Final Validation
+                                # Output a perfect standard string: "2026-02-19"
+                                current_date = (
+                                    f"{txn_year}-{txn_month:02d}-{txn_day:02d}"
+                                )
+
+                            orig_date_match = re.search(
+                                r"\d{1,2}\s*[a-zA-Z]{3,4}", line
+                            )
+                            desc_start_idx = (
+                                orig_date_match.end()
+                                if orig_date_match
+                                else line.find(raw_date) + len(raw_date)
+                            )
+                        else:
+                            desc_start_idx = len(line) - len(line.lstrip())
+
+                        matches = list(money_pattern.finditer(line))
+
+                        if len(matches) >= 1:
+                            try:
+                                amount_match = matches[0]
+                                amount_pos = amount_match.start()
+                                raw_amount = float(
+                                    amount_match.group().replace(",", "")
+                                )
+
+                                dist_to_with = abs(amount_pos - with_idx)
+                                dist_to_dep = abs(amount_pos - dep_idx)
+
+                                final_amount = (
+                                    -abs(raw_amount)
+                                    if dist_to_with <= dist_to_dep
+                                    else abs(raw_amount)
+                                )
+
+                                description = line[desc_start_idx:amount_pos].strip()
+                                description = re.sub(r"\s+", " ", description)
+
+                                if not description or len(description) < 2:
+                                    continue
+
+                                all_transactions.append(
+                                    {
+                                        "date": current_date,
+                                        "description": description,
+                                        "amount": final_amount,
+                                        "category": "Uncategorized",
+                                    }
+                                )
+                            except Exception as e:
+                                print(f"Parsing Error: {line.strip()} -> {e}")
+
         if not all_transactions:
-            print("CRITICAL: No transactions found.")
-            # Create empty DF with correct columns to prevent crash
-            df = pd.DataFrame(columns=["date", "description", "amount", "category"])
-        else:
-            df = pd.DataFrame(all_transactions)
-            print(f"SUCCESS: Extracted {len(df)} transactions.")
+            return pd.DataFrame(columns=["date", "description", "amount", "category"])
+        return pd.DataFrame(all_transactions)
 
     else:
         raise ValueError("Unsupported file type")
