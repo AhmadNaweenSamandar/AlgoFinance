@@ -33,6 +33,8 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
             "thecatholicce",
             "benefit",
             "e-transfer received",
+            "MiscPayment",
+            "Prov/localGovPayment",
         ],
         "Food & Groceries": [
             "costco",
@@ -66,10 +68,10 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
         ],
         "Transfers & Cash": [
             "atm",
-            "e-transfer sent",
+            "e-Transfersent",
             "online banking",
-            "miscpayment",
             "withdrawal",
+            "e-Transfer",
         ],
     }
 
