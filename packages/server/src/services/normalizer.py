@@ -41,30 +41,8 @@ def normalize_financial_data(df: pd.DataFrame) -> pd.DataFrame:
         final_df["amount"].replace("[\$,]", "", regex=True).astype(float)
     )
 
-    # --- 🟢 NEW: STEP 5 - SMART DATE STANDARDIZATION ---
-
-    # Attempt to convert all dates (Excel datetimes or PDF strings like "9 Jan") to Pandas datetime
-    # If the string has no year, Pandas will assume the current year (e.g., 2026)
+    # 5. Clean Dates (Now works perfectly for both Excel and our new PDF format)
     final_df["date"] = pd.to_datetime(final_df["date"], errors="coerce")
-
-    current_time = datetime.now()
-
-    def fix_future_dates(dt):
-        if pd.isna(dt):
-            return dt
-        # If the date parsed as a future date (e.g., Dec 23, 2026, when it's only Feb 2026)
-        # It means the statement crossed over the new year. Push it back to 2025.
-        if dt > current_time:
-            try:
-                return dt.replace(year=dt.year - 1)
-            except ValueError:
-                # Handle leap year edge cases (Feb 29)
-                return dt - pd.DateOffset(years=1)
-        return dt
-
-    final_df["date"] = final_df["date"].apply(fix_future_dates)
-
-    # Format them cleanly for your JSON response and Chatbot (YYYY-MM-DD)
     final_df["date"] = final_df["date"].dt.strftime("%Y-%m-%d")
     final_df["date"] = final_df["date"].fillna("Unknown Date")
 

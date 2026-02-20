@@ -25,6 +25,7 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
     # --- NEW PDF LOGIC ---
 
     elif filename.endswith(".pdf"):
+        from datetime import datetime
 
         all_transactions = []
         current_date = "Unknown Date"
@@ -33,7 +34,25 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
         with_idx = -1
         dep_idx = -1
 
-        # Regex for dates like "23Dec" or "9 Jan"
+        # THE ANCHOR: Default to today, but we will overwrite this from the PDF
+        statement_year = datetime.now().year
+        statement_month = datetime.now().month
+
+        month_map = {
+            "jan": 1,
+            "feb": 2,
+            "mar": 3,
+            "apr": 4,
+            "may": 5,
+            "jun": 6,
+            "jul": 7,
+            "aug": 8,
+            "sep": 9,
+            "oct": 10,
+            "nov": 11,
+            "dec": 12,
+        }
+
         date_pattern = re.compile(r"^(\d{1,2}\s*[a-zA-Z]{3,4})")
         money_pattern = re.compile(r"\d{1,3}(?:,\d{3})*\.\d{2}")
 
@@ -46,15 +65,23 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
                 for line in text.split("\n"):
                     if not line.strip():
                         continue
-
                     line_no_spaces = line.lower().replace(" ", "")
 
-                    # 1. Detect the start of the transactions
+                    # ---1. EXTRACT THE ANCHOR YEAR ---
+                    if "closingbalanceon" in line_no_spaces:
+                        year_match = re.search(r"(20\d{2})", line)
+                        if year_match:
+                            statement_year = int(year_match.group(1))
+                        # Find the statement month (e.g., 'jan' in 'january21')
+                        for m_name, m_num in month_map.items():
+                            if m_name in line_no_spaces:
+                                statement_month = m_num
+                                break
+
                     if "detailsofyouraccountactivity" in line_no_spaces:
                         in_details_section = True
                         continue
 
-                    # 2. Calibrate columns
                     if (
                         in_details_section
                         and "Withdrawals" in line
@@ -64,10 +91,7 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
                         dep_idx = line.find("Deposits")
                         continue
 
-                    # 3. Extract Transactions
                     if in_details_section and with_idx != -1:
-
-                        # THE SHIELD: Ignore the summary balances so they don't inflate totals
                         if (
                             "openingbalance" in line_no_spaces
                             or "closingbalance" in line_no_spaces
@@ -80,10 +104,28 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
 
                         if date_match:
                             raw_date = date_match.group(1).strip()
-                            # Make it pretty: "23Dec" -> "23 Dec"
-                            current_date = re.sub(
-                                r"(\d+)([a-zA-Z]+)", r"\1 \2", raw_date
-                            )
+
+                            # ---2. RECONSTRUCT PERFECT ISO DATES ---
+                            txn_day_match = re.search(r"\d{1,2}", raw_date)
+                            txn_month_match = re.search(r"[a-zA-Z]{3}", raw_date)
+
+                            if txn_day_match and txn_month_match:
+                                txn_day = int(txn_day_match.group())
+                                txn_month_str = txn_month_match.group().lower()
+                                txn_month = month_map.get(
+                                    txn_month_str, statement_month
+                                )
+
+                                # Cross-Year Logic: If statement is Jan and txn is Dec, txn is from last year
+                                if txn_month > statement_month:
+                                    txn_year = statement_year - 1
+                                else:
+                                    txn_year = statement_year
+
+                                # Output a perfect standard string: "2026-02-19"
+                                current_date = (
+                                    f"{txn_year}-{txn_month:02d}-{txn_day:02d}"
+                                )
 
                             orig_date_match = re.search(
                                 r"\d{1,2}\s*[a-zA-Z]{3,4}", line
@@ -94,7 +136,6 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
                                 else line.find(raw_date) + len(raw_date)
                             )
                         else:
-                            # Ghost Date (Multiple transactions on one day)
                             desc_start_idx = len(line) - len(line.lstrip())
 
                         matches = list(money_pattern.finditer(line))
@@ -102,19 +143,19 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
                         if len(matches) >= 1:
                             try:
                                 amount_match = matches[0]
-                                amount_str = amount_match.group()
                                 amount_pos = amount_match.start()
+                                raw_amount = float(
+                                    amount_match.group().replace(",", "")
+                                )
 
-                                raw_amount = float(amount_str.replace(",", ""))
-
-                                # Spatial Math: Is it under Withdrawals or Deposits?
                                 dist_to_with = abs(amount_pos - with_idx)
                                 dist_to_dep = abs(amount_pos - dep_idx)
 
-                                if dist_to_with <= dist_to_dep:
-                                    final_amount = -abs(raw_amount)  # Expense
-                                else:
-                                    final_amount = abs(raw_amount)  # Income
+                                final_amount = (
+                                    -abs(raw_amount)
+                                    if dist_to_with <= dist_to_dep
+                                    else abs(raw_amount)
+                                )
 
                                 description = line[desc_start_idx:amount_pos].strip()
                                 description = re.sub(r"\s+", " ", description)
@@ -130,15 +171,12 @@ async def extract_data_from_file(file: UploadFile) -> pd.DataFrame:
                                         "category": "Uncategorized",
                                     }
                                 )
-
                             except Exception as e:
                                 print(f"Parsing Error: {line.strip()} -> {e}")
 
-        # Return the clean DataFrame
         if not all_transactions:
             return pd.DataFrame(columns=["date", "description", "amount", "category"])
-        else:
-            return pd.DataFrame(all_transactions)
+        return pd.DataFrame(all_transactions)
 
     else:
         raise ValueError("Unsupported file type")
