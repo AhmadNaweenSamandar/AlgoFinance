@@ -27,7 +27,7 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
     # --- LAYER 1: RULES (Order matters! Top rules win first) ---
     rules = {
         "Income": [
-            "misc payment",  # Catches "misc payment uber" BEFORE it hits Transport!
+            "miscpayment",  # Catches "misc payment uber" BEFORE it hits Transport!
             "prov/localgvtpayment",  # Catches government deposits
             "deposit",
             "payroll",
