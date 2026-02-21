@@ -24,57 +24,63 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
     # This is faster and 100% accurate for known vendors compared to AI.
     # Brain of the model, the code look at description and assign category based on keywords.
     # for other the app will use the ML model to predict the category based on description.
+    # --- LAYER 1: RULES (Order matters! Top rules win first) ---
     rules = {
-        #     "Income": [
-        #         "deposit",
-        #         "payroll",
-        #         "employer",
-        #         "gst canada",
-        #         "thecatholicce",
-        #         "benefit",
-        #         "e-transfer received",
-        #         "misc payment amazon holdings",
-        #         "misc payment uber holdings" "Prov/localGovPayment",
-        #         "payment" "prov/local gvt payment",
-        #     ],
-        #     "Food & Groceries": [
-        #         "costco",
-        #         "loblaws",
-        #         "metro",
-        #         "starbucks",
-        #         "mcdonalds",
-        #         "tim hortons",
-        #         "walmart",
-        #         "sobeys",
-        #         "pizza",
-        #     ],
-        #     "Transport": ["lyft", "presto", "gas", "shell", "petro", "transit"],
-        #     "Bills & Utilities": [
-        #         "insurance",
-        #         "aviva",
-        #         "hydro",
-        #         "rogers",
-        #         "bell",
-        #         "fido",
-        #         "koodo",
-        #     ],
-        #     "Debt & Loans": ["loanpayment", "studentloan", "student loan", "mortgage"],
-        #     "Entertainment & Shopping": [
-        #         "amazon.ca",
-        #         "amazon.com",
-        #         "netflix",
-        #         "spotify",
-        #         "cineplex",
-        #         "apple",
-        #         "prime",
-        #     ],
-        #     "Transfers & Cash": [
-        #         "atm",
-        #         "e-Transfersent",
-        #         "onlinebankingtransfer",
-        #         "withdrawal",
-        #         "e-transfer",
-        #     ],
+        "Income": [
+            "misc payment",  # Catches "misc payment uber" BEFORE it hits Transport!
+            "prov/localgvtpayment",  # Catches government deposits
+            "deposit",
+            "payroll",
+            "employer",
+            "gst canada",
+            "thecatholicce",
+            "benefit",
+            "e-transfer received",
+        ],
+        "Food & Groceries": [
+            "costco",
+            "loblaws",
+            "metro",
+            "starbucks",
+            "mcdonalds",
+            "tim hortons",
+            "walmart",
+            "sobeys",
+            "pizza",
+        ],
+        "Transport": [
+            "uber",  # If it was a misc payment, it already returned Income. If it reaches here, it's a ride!
+            "lyft",
+            "presto",
+            "gas",
+            "shell",
+            "petro",
+            "transit",
+        ],
+        "Bills & Utilities": [
+            "insurance",
+            "aviva",
+            "hydro",
+            "rogers",
+            "bell",
+            "fido",
+            "koodo",
+        ],
+        "Debt & Loans": ["loanpayment", "studentloan", "student loan", "mortgage"],
+        "Entertainment & Shopping": [
+            "amazon",
+            "netflix",
+            "spotify",
+            "cineplex",
+            "apple",
+            "prime",
+        ],
+        "Transfers & Cash": [
+            "atm",
+            "e-transfersent",
+            "onlinebankingtransfer",
+            "withdrawal",
+        ],
     }
 
     # 1. Normalize the description for matching (lowercase)
