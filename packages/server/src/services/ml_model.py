@@ -33,8 +33,9 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
             "thecatholicce",
             "benefit",
             "e-transfer received",
-            "MiscPayment",
-            "Prov/localGovPayment",
+            "misc payment amazon holdings",
+            "misc payment uber holdings" "Prov/localGovPayment",
+            "payment" "prov/local gvt payment",
         ],
         "Food & Groceries": [
             "costco",
@@ -47,7 +48,7 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
             "sobeys",
             "pizza",
         ],
-        "Transport": ["uber", "lyft", "presto", "gas", "shell", "petro", "transit"],
+        "Transport": ["lyft", "presto", "gas", "shell", "petro", "transit"],
         "Bills & Utilities": [
             "insurance",
             "aviva",
@@ -59,7 +60,8 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
         ],
         "Debt & Loans": ["loanpayment", "studentloan", "student loan", "mortgage"],
         "Entertainment & Shopping": [
-            "amazon",
+            "amazon.ca",
+            "amazon.com",
             "netflix",
             "spotify",
             "cineplex",
@@ -69,9 +71,9 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
         "Transfers & Cash": [
             "atm",
             "e-Transfersent",
-            "online banking",
+            "online banking transfer",
             "withdrawal",
-            "e-Transfer",
+            "e-transfer",
         ],
     }
 
