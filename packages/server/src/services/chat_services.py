@@ -170,7 +170,7 @@ def ask_financial_question(question: str):
     )
 
     # 3. Create Prompt
-    template = """You are a Financial Analyst. Answer the question based only on the following context:
+    template = """You are a Financial Assistant, your name is Gabina. Answer the question based only on the following context:
 
     {context}
 

@@ -24,8 +24,11 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
     # This is faster and 100% accurate for known vendors compared to AI.
     # Brain of the model, the code look at description and assign category based on keywords.
     # for other the app will use the ML model to predict the category based on description.
+    # --- LAYER 1: RULES (Order matters! Top rules win first) ---
     rules = {
         "Income": [
+            "miscpayment",  # Catches "misc payment uber" BEFORE it hits Transport!
+            "prov/localgvtpayment",  # Catches government deposits
             "deposit",
             "payroll",
             "employer",
@@ -33,8 +36,6 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
             "thecatholicce",
             "benefit",
             "e-transfer received",
-            "MiscPayment",
-            "Prov/localGovPayment",
         ],
         "Food & Groceries": [
             "costco",
@@ -47,7 +48,15 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
             "sobeys",
             "pizza",
         ],
-        "Transport": ["uber", "lyft", "presto", "gas", "shell", "petro", "transit"],
+        "Transport": [
+            "uber",  # If it was a misc payment, it already returned Income. If it reaches here, it's a ride!
+            "lyft",
+            "presto",
+            "gas",
+            "shell",
+            "petro",
+            "transit",
+        ],
         "Bills & Utilities": [
             "insurance",
             "aviva",
@@ -68,10 +77,9 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
         ],
         "Transfers & Cash": [
             "atm",
-            "e-Transfersent",
-            "online banking",
+            "e-transfersent",
+            "onlinebankingtransfer",
             "withdrawal",
-            "e-Transfer",
         ],
     }
 
@@ -101,15 +109,34 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
                     return category  # Stop here if rule matches
 
         # --- LAYER 2: ML MODEL ---
-        # Only runs if Layer 1 returned nothing
+        # we assume that the food category percentage is higher then all others
+        # that is the reason that ML model predict food for all transaction which are complicated like: misc payment amazon, that has keyword collison
+        # our precious model was forced to predict category based on the highest percentage of the category occurance in the trained data
+        # Now, It uses predict_proba (prediction probability) to check how confident the model is before accepting the answer.
+        # if the model looks at "misc payment amazon" and is only 30% sure it's Food, it will cleanly output "Other".
+        # the prediction acceptance threshold is set at 50% (0.50), but you can adjust it based on your needs.
         if ml_pipeline:
             try:
-                # The model expects a list/iterable, so we wrap desc in []
-                # It returns an array of predictions, we take the first one [0]
+                # Get the probabilities for all categories
+                probabilities = ml_pipeline.predict_proba([desc])[0]
+
+                # Find the highest probability score (e.g., 0.85 for 85% confident)
+                max_confidence = max(probabilities)
+
+                # Find which category that score belongs to
+                best_guess = ml_pipeline.classes_[probabilities.argmax()]
+
+                # THE SHIELD: If the model is less than 50% sure, force it to 'Other'
+                if max_confidence < 0.50:
+                    return "Other"
+
+                return best_guess
+
+            except AttributeError:
+                # Fallback if your specific ML model doesn't support predict_proba
                 prediction = ml_pipeline.predict([desc])[0]
                 return prediction
             except Exception as e:
-                # If model fails, default to 'Other'
                 return "Other"
 
         return "Other"

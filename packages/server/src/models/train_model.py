@@ -9,15 +9,15 @@ import joblib
 # 1. Load 1500+ row Excel file
 print("Loading dataset...")
 # The Excel has columns named 'description' and 'category'
-df = pd.read_excel("training_data.xlsx") 
+df = pd.read_excel("training_data.xlsx")
 
 # Check for missing values and drop them
-df = df.dropna(subset=['description', 'category'])
+df = df.dropna(subset=["description", "category"])
 
 # 2. Split into Training and Testing sets (80% train, 20% test)
 # This lets us check if the model is actually learning or just memorizing
 X_train, X_test, y_train, y_test = train_test_split(
-    df['description'], df['category'], test_size=0.2, random_state=42
+    df["description"], df["category"], test_size=0.2, random_state=42
 )
 
 # 3. Build the Pipeline
@@ -35,5 +35,5 @@ accuracy = model.score(X_test, y_test)
 print(f"Model Accuracy: {accuracy * 100:.2f}%")
 
 # 6. Save the "Brain" to a file
-joblib.dump(model, "app/transaction_classifier.pkl")
-print("Model saved to app/transaction_classifier.pkl")
+joblib.dump(model, "transaction_classifier.pkl")
+print("Model saved as transaction_classifier.pkl")
