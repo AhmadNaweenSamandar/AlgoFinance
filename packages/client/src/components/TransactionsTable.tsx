@@ -13,7 +13,7 @@ import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 interface Transaction {
   id: number;
   date: string;
-  merchant: string;
+  description: string;
   category: string;
   amount: number;
   status: string;
@@ -75,7 +75,7 @@ export function TransactionsTable({
                     </div>
                   )}
                   <span className={compact ? "text-sm" : ""}>
-                    {transaction.merchant}
+                    {transaction.description}
                   </span>
                 </div>
               </TableCell>
