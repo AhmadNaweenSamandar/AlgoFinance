@@ -239,7 +239,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
                 ${financialData.summary.net_saving.toLocaleString()}
               </div>
               <p className="text-xs text-emerald-700">
-                {monthlyStats.savingsRate}% savings rate
+                {financialData.insights[0].value} savings rate
               </p>
             </CardContent>
           </Card>
@@ -254,7 +254,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
                 {financialData.summary.total_transactions}
               </div>
               <p className="text-xs text-gray-600">
-                Top: {monthlyStats.topCategory}
+                Top: {financialData.insights[1].value}
               </p>
             </CardContent>
           </Card>
