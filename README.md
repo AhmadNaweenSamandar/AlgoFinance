@@ -1,73 +1,83 @@
-# React + TypeScript + Vite
+# AlgoFinance - Personal Financial Insights Powered by ML
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+AlgoFinance is an intelligent personal finance web application that helps users understand, manage, and improve their spending habits.  
+By uploading or connecting banking exports, users receive automatic transaction categorization, smart insights, visual dashboards, and goal-based financial recommendations — all powered by machine learning.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🔮 Features
 
-## React Compiler
+- **📥 Upload Bank Exports**  
+  Supports CSV, XLSX, and other standard banking formats.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **🤖 ML-Powered Categorization**  
+  Built with **Python** and libraries like **PyTorch**, the app learns user spending patterns and automatically categorizes transactions.
 
-## Expanding the ESLint configuration
+- **📊 Smart Dashboards & Visualizations**  
+  Interactive charts and tables displaying spending breakdowns, monthly summaries, trends, and anomalies.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **🎯 Goal-Based Recommendations**  
+  Personalized suggestions based on saving goals, budgeting needs, and spending limits.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **📂 Generate Reports**  
+  Export insights into clean, easy-to-read PDF summaries.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **🛢 Local Storage Using SQLite**  
+  SQLite keeps processed transactions, insight summaries, and user data secure and organized.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **🗃 Professional Version Control Workflow**  
+  Project maintained using **Git + GitHub** with branching strategies and clean documentation.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## System Design Architecture
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+![System Design Architecture for AlgoFinance](product_design/SDA.PNG)
+
+
+
+## 🎨 Figma UI/UX Design
+
+Full design prototype is available here:  
+👉 **Figma Design:** *[(https://www.figma.com/proto/gBa010CXrxC4YSh9HrAK6e/Untitled?node-id=0-1&t=ndE3HaO9BPTI8NLu-1)]*  
+
+The design includes:
+- Dashboard layouts  
+- Overview, Transactions, and Insights screens  
+- Chart and table components  
+- Upload flow and ML processing views  
+
+---
+
+## 🧠 Tech Stack
+
+### **Backend + ML**
+- Python  
+- PyTorch (ML modeling & classification)  
+- Pandas, NumPy, Scikit-Learn (data processing)
+
+### **Database**
+- SQLite (lightweight + reliable)
+
+### **Frontend**
+- React (Charts using Recharts or similar UI libraries)
+
+### **Version Control**
+- Git + GitHub
+
+---
+
+## 🚀 Project Goals
+
+- Build a professional-grade full-stack ML application  
+- Practice real-world engineering workflows  
+- Implement ML for automated financial insights  
+- Deliver a clean UI based on a polished Figma design  
+- Prepare for future upgrades such as:  
+- Bank API integrations  
+- Spending prediction model
+
+---
+
+## 📁 Planned Directory Structure
+
