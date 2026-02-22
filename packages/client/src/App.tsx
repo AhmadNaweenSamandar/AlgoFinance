@@ -10,9 +10,15 @@ import { Header } from "./components/Header";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("home");
+  //The Parent's vault to hold the JSON data
+  const [appData, setAppData] = useState<any>(null);
 
-  const handleNavigate = (page: string) => {
+  // Upgrade the navigation handler to catch the backpack from Hero and pass it to Dashboard
+  const handleNavigate = (page: string, data?: any) => {
     setCurrentPage(page);
+    if (data) {
+      setAppData(data); // Save the JSON to the vault!
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -21,7 +27,10 @@ export default function App() {
       case "about":
         return <AboutPage />;
       case "dashboard":
-        return <Dashboard onNavigate={handleNavigate} />;
+        //Handed the JSON to financialData in the "interface DashboardProps"
+        return (
+          <Dashboard onNavigate={handleNavigate} financialData={appData} />
+        );
       default:
         return (
           <main>
