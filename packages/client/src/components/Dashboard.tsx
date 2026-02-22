@@ -126,8 +126,10 @@ const monthlyStats = {
   transactionCount: 47,
 };
 
+// Notice the '?' making the data optional, so older links don't break
 interface DashboardProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, data?: any) => void;
+  financialData?: any; // We also add this to Dashboard so it can receive the data from Hero!
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
