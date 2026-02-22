@@ -26,14 +26,20 @@ interface TransactionsTableProps {
 
 //color and small rounded square assigned to each user
 const categoryColors: Record<string, string> = {
-  Groceries: "bg-emerald-100 text-emerald-700",
+  Food: "bg-emerald-100 text-emerald-700",
   Dining: "bg-blue-100 text-blue-700",
   Shopping: "bg-purple-100 text-purple-700",
-  Transportation: "bg-orange-100 text-orange-700",
+  Transport: "bg-orange-100 text-orange-700",
   Entertainment: "bg-pink-100 text-pink-700",
   Health: "bg-cyan-100 text-cyan-700",
   Utilities: "bg-amber-100 text-amber-700",
   Income: "bg-green-100 text-green-700",
+  Benefits: "bg-teal-100 text-white-700",
+  Bills: "bg-yellow-100 text-orange-700",
+  Loans: "bg-red-100 text-red-700",
+  Transfer: "bg-gray-100 text-gray-700",
+  Cash: "bg-gray-100 text-brown-700",
+  Other: "bg-gray-100 text-gray-700",
 };
 
 export function TransactionsTable({
@@ -94,7 +100,7 @@ export function TransactionsTable({
               <TableCell className="text-right">
                 <span
                   className={
-                    transaction.amount > 0 ? "text-green-600" : "text-gray-900"
+                    transaction.amount > 0 ? "text-green-600" : "text-red-600"
                   }
                 >
                   {transaction.amount > 0 ? "+" : ""}

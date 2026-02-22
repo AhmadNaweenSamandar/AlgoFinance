@@ -28,24 +28,26 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
     rules = {
         "Income": [
             "miscpayment",  # Catches "misc payment uber" BEFORE it hits Transport!
-            "prov/localgvtpayment",  # Catches government deposits
             "deposit",
             "payroll",
             "employer",
-            "gst canada",
             "thecatholicce",
-            "benefit",
-            "e-transfer received",
         ],
-        "Food & Groceries": [
+        "Food": [
             "costco",
             "loblaws",
             "metro",
-            "starbucks",
-            "mcdonalds",
             "tim hortons",
             "walmart",
+        ],
+        "Benefits": [
+            "gst canada",
+            "prov/localgvtpayment",
+            "benefit",
+        ],
+        "Dinning": [
             "sobeys",
+            "mcdonalds",
             "pizza",
         ],
         "Transport": [
@@ -57,7 +59,7 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
             "petro",
             "transit",
         ],
-        "Bills & Utilities": [
+        "Bills": [
             "insurance",
             "aviva",
             "hydro",
@@ -66,21 +68,31 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
             "fido",
             "koodo",
         ],
-        "Debt & Loans": ["loanpayment", "studentloan", "student loan", "mortgage"],
-        "Entertainment & Shopping": [
-            "amazon",
+        "Utilities": [
+            "hydro",
+            "enbridge",
+            "enercare",
+        ],
+        "Loans": ["loanpayment", "studentloan", "student loan", "mortgage"],
+        "Entertainment": [
             "netflix",
             "spotify",
             "cineplex",
-            "apple",
             "prime",
         ],
-        "Transfers & Cash": [
-            "atm",
+        "Shopping": [
+            "amazon",
+            "bestbuy",
+            "walmart",
+            "apple",
+        ],
+        "Transfers": [
             "e-transfersent",
             "onlinebankingtransfer",
             "withdrawal",
+            "e-transfer received",
         ],
+        "Cash": ["atm", "cash"],
     }
 
     # 1. Normalize the description for matching (lowercase)
