@@ -309,7 +309,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               >
                 {/*this will be connected with InsightsCharts */}
                 {/*Insight section charts will appear here*/}
-                <InsightsCharts categorySpending={categorySpending} />
+                <InsightsCharts categorySpending={financialData.overview} />
               </TabsContent>
               <TabsContent
                 value="transactions"
