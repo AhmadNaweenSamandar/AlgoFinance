@@ -329,12 +329,20 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">All Categories</SelectItem>
-                            <SelectItem value="groceries">Groceries</SelectItem>
+                            <SelectItem value="food">Food</SelectItem>
                             <SelectItem value="dining">Dining</SelectItem>
                             <SelectItem value="shopping">Shopping</SelectItem>
-                            <SelectItem value="transportation">
-                              Transportation
+                            <SelectItem value="transport">Transport</SelectItem>
+                            <SelectItem value="entertainment">
+                              Entertainment
                             </SelectItem>
+                            <SelectItem value="utilities">Utilities</SelectItem>
+                            <SelectItem value="benefits">Benefits</SelectItem>
+                            <SelectItem value="bills">Bills</SelectItem>
+                            <SelectItem value="loans">Loans</SelectItem>
+                            <SelectItem value="transfer">Transfer</SelectItem>
+                            <SelectItem value="cash">Cash</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
