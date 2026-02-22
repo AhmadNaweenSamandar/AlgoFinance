@@ -34,11 +34,11 @@ const categoryColors: Record<string, string> = {
   Health: "bg-cyan-100 text-cyan-700",
   Utilities: "bg-amber-100 text-amber-700",
   Income: "bg-green-100 text-green-700",
-  Benefits: "bg-teal-100 text-white-700",
-  Bills: "bg-yellow-100 text-orange-700",
+  Benefits: "bg-teal-100 text-teal-700",
+  Bills: "bg-yellow-100 text-yellow-800",
   Loans: "bg-red-100 text-red-700",
   Transfer: "bg-gray-100 text-gray-700",
-  Cash: "bg-gray-100 text-brown-700",
+  Cash: "bg-gray-100 text-gray-700",
   Other: "bg-gray-100 text-gray-700",
 };
 
@@ -64,6 +64,7 @@ export function TransactionsTable({
             <TableRow key={transaction.id}>
               <TableCell className="text-sm text-gray-600">
                 {new Date(transaction.date).toLocaleDateString("en-US", {
+                  timeZone: "UTC",
                   month: "short",
                   day: "numeric",
                 })}
