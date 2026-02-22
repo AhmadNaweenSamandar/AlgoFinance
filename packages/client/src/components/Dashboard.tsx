@@ -126,11 +126,13 @@ const monthlyStats = {
   transactionCount: 47,
 };
 
+// Notice the '?' making the data optional, so older links don't break
 interface DashboardProps {
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, data?: any) => void;
+  financialData?: any; // We also add this to Dashboard so it can receive the data from Hero!
 }
 
-export function Dashboard({ onNavigate }: DashboardProps) {
+export function Dashboard({ onNavigate, financialData }: DashboardProps) {
   // useState handling overview navigation in the dashboard
   const [activeTab, setActiveTab] = useState("overview");
   // handling the search
@@ -208,7 +210,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 <TrendingUp className="w-4 h-4 text-green-600" />
               </div>
               <div className="text-2xl mb-1">
-                ${monthlyStats.totalIncome.toLocaleString()}
+                ${financialData.summary.total_income.toLocaleString()}
               </div>
               <p className="text-xs text-green-600">+12% from last month</p>
             </CardContent>
@@ -221,7 +223,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 <CreditCard className="w-4 h-4 text-red-600" />
               </div>
               <div className="text-2xl mb-1">
-                ${monthlyStats.totalExpenses.toLocaleString()}
+                ${financialData.summary.total_expenses.toLocaleString()}
               </div>
               <p className="text-xs text-red-600">+8% from last month</p>
             </CardContent>
@@ -234,10 +236,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 <PiggyBank className="w-4 h-4 text-emerald-600" />
               </div>
               <div className="text-2xl text-emerald-900 mb-1">
-                ${monthlyStats.netSavings.toLocaleString()}
+                ${financialData.summary.net_saving.toLocaleString()}
               </div>
               <p className="text-xs text-emerald-700">
-                {monthlyStats.savingsRate}% savings rate
+                {financialData.insights[0].value} savings rate
               </p>
             </CardContent>
           </Card>
@@ -249,10 +251,10 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 <ArrowUpDown className="w-4 h-4 text-gray-600" />
               </div>
               <div className="text-2xl mb-1">
-                {monthlyStats.transactionCount}
+                {financialData.summary.total_transactions}
               </div>
               <p className="text-xs text-gray-600">
-                Top: {monthlyStats.topCategory}
+                Top: {financialData.insights[1].value}
               </p>
             </CardContent>
           </Card>
