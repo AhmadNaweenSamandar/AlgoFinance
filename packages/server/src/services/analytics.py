@@ -40,7 +40,7 @@ def generate_dashboard_data(df: pd.DataFrame):
         "Utilities": "#eab308",  # Yellow
         "Loans": "#ef4444",  # Red
         "Entertainment": "#a855f7",  # Purple
-        "Transfer": "#6b7280",  # Gray
+        "Transfer": "#97b806",  # light green
         "Dining": "#BD0019",  # DarkRed
         "Shopping": "#8B008B",  # DarkMagenta
         "Health": "#3b82f6",  # Blue

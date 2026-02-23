@@ -53,6 +53,13 @@ export function InsightsCharts({
     color: item.color || "#6b7280",
   }));
 
+  //THE TEST DATA for bar chart
+  const testData = [
+    { name: "Test Food", value: 400, color: "#10b981" },
+    { name: "Test Transport", value: 250, color: "#f97316" },
+    { name: "Test Bills", value: 100, color: "#eab308" },
+  ];
+
   // For overview - show combined spending visualization
   if (!detailed) {
     return (
@@ -131,25 +138,29 @@ export function InsightsCharts({
 
   // For detailed insights - only show Category Comparison
   return (
-    //category comparison chart tab layout
     <Card>
       <CardHeader>
         <CardTitle>Category Comparison</CardTitle>
         <CardDescription>Spending amount by category</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
+        <div className="h-[300px] w-full">
+          {/* THE BUG FIX: Change width to "99%" to force Recharts to draw inside a Tab */}
+          <ResponsiveContainer width="99%" height="100%">
+            {/* DATA FIX: Pass chartData, which has 'name' and 'value' */}
+            <BarChart data={testData}>
               <XAxis dataKey="name" />
               <YAxis />
-              {/*individual bars showing expenses*/}
+
               <Tooltip
                 formatter={(value: number | undefined) =>
                   value ? `$${value.toFixed(2)}` : "$0.00"
                 }
               />
+
+              {/* DATA FIX: Use 'value' for the height */}
               <Bar dataKey="value" fill="#10b981" radius={[8, 8, 0, 0]}>
+                {/*DATA FIX: Loop over chartData to get the colors */}
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
