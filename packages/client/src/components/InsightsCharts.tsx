@@ -50,8 +50,15 @@ export function InsightsCharts({
   const chartData = categorySpending.map((item) => ({
     name: item.category,
     value: item.amount,
-    color: COLORS[item.color] || "#6b7280",
+    color: item.color || "#6b7280",
   }));
+
+  //THE TEST DATA for bar chart
+  const testData = [
+    { name: "Test Food", value: 400, color: "#10b981" },
+    { name: "Test Transport", value: 250, color: "#f97316" },
+    { name: "Test Bills", value: 100, color: "#eab308" },
+  ];
 
   // For overview - show combined spending visualization
   if (!detailed) {
@@ -107,7 +114,17 @@ export function InsightsCharts({
                     ${category.amount.toFixed(2)}
                   </span>
                 </div>
-                <Progress value={category.percentage} className="h-2" />
+                {/*this change aims to display the part with movement with category color */}
+                {/*THE FIX: Replaced <Progress /> with custom dynamic divs */}
+                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500 ease-out"
+                    style={{
+                      width: `${category.percentage}%`,
+                      backgroundColor: category.color, //JSON color applied here!
+                    }}
+                  />
+                </div>
                 <div className="text-xs text-gray-500">
                   {category.percentage}% of total spending
                 </div>
@@ -121,25 +138,29 @@ export function InsightsCharts({
 
   // For detailed insights - only show Category Comparison
   return (
-    //category comparison chart tab layout
     <Card>
       <CardHeader>
         <CardTitle>Category Comparison</CardTitle>
         <CardDescription>Spending amount by category</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="h-[300px] w-full">
+          {/* THE BUG FIX: Change width to "99%" to force Recharts to draw inside a Tab */}
+          <ResponsiveContainer width="99%" height="100%">
+            {/* DATA FIX: Pass chartData, which has 'name' and 'value' */}
             <BarChart data={chartData}>
               <XAxis dataKey="name" />
               <YAxis />
-              {/*individual bars showing expenses*/}
+
               <Tooltip
                 formatter={(value: number | undefined) =>
                   value ? `$${value.toFixed(2)}` : "$0.00"
                 }
               />
+
+              {/* DATA FIX: Use 'value' for the height */}
               <Bar dataKey="value" fill="#10b981" radius={[8, 8, 0, 0]}>
+                {/*DATA FIX: Loop over chartData to get the colors */}
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}

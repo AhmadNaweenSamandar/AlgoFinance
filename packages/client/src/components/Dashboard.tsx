@@ -309,7 +309,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               >
                 {/*this will be connected with InsightsCharts */}
                 {/*Insight section charts will appear here*/}
-                <InsightsCharts categorySpending={categorySpending} />
+                <InsightsCharts categorySpending={financialData.overview} />
               </TabsContent>
               <TabsContent
                 value="transactions"
@@ -398,12 +398,11 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
                         <Sparkles className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                         <div>
                           <h4 className="text-emerald-900 mb-1">
-                            Great Savings Rate!
+                            {financialData.insights[0].title}
                           </h4>
                           <p className="text-sm text-emerald-800">
-                            You're saving 61.3% of your income this month.
-                            That's excellent! Keep it up to reach your goals
-                            faster.
+                            {financialData.insights[0].value} -{" "}
+                            {financialData.insights[0].desc}
                           </p>
                         </div>
                       </div>
@@ -414,12 +413,11 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
                         <TrendingUp className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                         <div>
                           <h4 className="text-blue-900 mb-1">
-                            Shopping Trend Alert
+                            {financialData.insights[1].title}
                           </h4>
                           <p className="text-sm text-blue-800">
-                            Your shopping spending is up 18% compared to last
-                            month. Consider setting a budget to keep it in
-                            check.
+                            {financialData.insights[1].value} -{" "}
+                            {financialData.insights[1].desc}
                           </p>
                         </div>
                       </div>
@@ -458,7 +456,10 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
                 </Card>
                 {/*this will be connected with InsightsCharts */}
                 {/*Insight section charts will appear here*/}
-                <InsightsCharts categorySpending={categorySpending} detailed />
+                <InsightsCharts
+                  categorySpending={financialData.overview}
+                  detailed
+                />
               </TabsContent>
             </Tabs>
           </div>
