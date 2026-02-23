@@ -50,7 +50,7 @@ export function InsightsCharts({
   const chartData = categorySpending.map((item) => ({
     name: item.category,
     value: item.amount,
-    color: COLORS[item.color] || "#6b7280",
+    color: item.color || "#6b7280",
   }));
 
   // For overview - show combined spending visualization
@@ -107,7 +107,17 @@ export function InsightsCharts({
                     ${category.amount.toFixed(2)}
                   </span>
                 </div>
-                <Progress value={category.percentage} className="h-2" />
+                {/*this change aims to display the part with movement with category color */}
+                {/*THE FIX: Replaced <Progress /> with custom dynamic divs */}
+                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500 ease-out"
+                    style={{
+                      width: `${category.percentage}%`,
+                      backgroundColor: category.color, //JSON color applied here!
+                    }}
+                  />
+                </div>
                 <div className="text-xs text-gray-500">
                   {category.percentage}% of total spending
                 </div>
