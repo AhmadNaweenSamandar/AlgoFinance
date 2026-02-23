@@ -148,7 +148,7 @@ export function InsightsCharts({
           {/* THE BUG FIX: Change width to "99%" to force Recharts to draw inside a Tab */}
           <ResponsiveContainer width="99%" height="100%">
             {/* DATA FIX: Pass chartData, which has 'name' and 'value' */}
-            <BarChart data={testData}>
+            <BarChart data={chartData}>
               <XAxis dataKey="name" />
               <YAxis />
 
