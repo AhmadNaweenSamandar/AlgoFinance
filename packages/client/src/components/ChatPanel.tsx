@@ -30,7 +30,7 @@ const initialMessages: Message[] = [
     id: 1,
     role: "assistant",
     content:
-      "Hi! I'm your AI financial advisor. I can help you understand your spending, suggest savings strategies, and answer questions about your finances. What would you like to know?",
+      "Hi! My name is Gabina, I'm your AI financial assistant. I can help you understand your spending, suggest savings strategies, and answer questions about your finances. How can I help you today?",
     timestamp: new Date(),
   },
 ];
@@ -39,7 +39,7 @@ const initialMessages: Message[] = [
 const sampleQuestions = [
   "How can I reduce my spending?",
   "What's my biggest expense?",
-  "Am I on track for my savings goal?",
+  "What's my lowest expense?",
   "Show me dining trends",
 ];
 
