@@ -142,7 +142,7 @@ export function ChatPanel({}: ChatPanelProps) {
   // We put the chat layout in a function so we can render it in the background AND in the pop-up
   const renderChatInterface = (isActive: boolean) => (
     <Card className="h-full flex flex-col relative w-full bg-white shadow-xl">
-      <CardHeader className="border-b bg-white">
+      <CardHeader className="border-b bg-white rounded-xl">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-full flex items-center justify-center shadow-inner">
             <Sparkles className="w-5 h-5 text-white" />
@@ -242,7 +242,7 @@ export function ChatPanel({}: ChatPanelProps) {
           className="absolute inset-0 z-10 bg-white/5 group-hover:bg-black/5 transition-colors rounded-xl flex items-center justify-center"
           onClick={() => setIsModalOpen(true)}
         >
-           <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-sm px-4 py-2 rounded-full shadow-lg font-medium">
+           <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-teal text-sm px-4 py-2 rounded-full shadow-lg font-medium">
               Click to chat with Gabina
            </div>
         </div>
