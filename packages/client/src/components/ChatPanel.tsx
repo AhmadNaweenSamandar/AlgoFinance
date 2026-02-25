@@ -13,6 +13,7 @@ import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import ReactMarkdown from 'react-markdown';
 import { useRef, useEffect } from 'react';
+import { createPortal } from "react-dom";
 
 //interface for chat panel component
 interface Message {
@@ -230,28 +231,24 @@ export function ChatPanel({}: ChatPanelProps) {
 
   return (
     <>
-      {/* THE DASHBOARD PREVIEW */}
+      {/* THE DASHBOARD PREVIEW  */}
       <div className="relative h-[600px] lg:sticky lg:top-24 group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-xl">
-        {/* Render the chat silently in the background */}
         {renderChatInterface(false)}
-        
-        {/* The Invisible Click Catcher: Forces the modal to open instead of clicking buttons inside the preview */}
         <div 
           className="absolute inset-0 z-10 bg-white/5 group-hover:bg-black/5 transition-colors rounded-xl flex items-center justify-center"
           onClick={() => setIsModalOpen(true)}
         >
-           {/* Optional: Add a subtle "Click to expand" badge that appears on hover */}
            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-sm px-4 py-2 rounded-full shadow-lg font-medium">
               Click to chat with Gabina
            </div>
         </div>
       </div>
 
-      {/* THE POP-UP MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-md animate-in fade-in duration-200">
+      {/* THE FIX: TELEPORT THE MODAL TO THE DOCUMENT BODY */}
+      {isModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           
-          {/* Click outside to close (Optional) */}
+          {/* Click outside to close */}
           <div className="absolute inset-0" onClick={() => setIsModalOpen(false)} />
 
           <div className="relative w-full max-w-3xl h-[85vh] animate-in zoom-in-95 duration-200">
@@ -267,7 +264,8 @@ export function ChatPanel({}: ChatPanelProps) {
             {renderChatInterface(true)}
           </div>
 
-        </div>
+        </div>,
+        document.body // This is the magic line that teleports the HTML!
       )}
     </>
   );
