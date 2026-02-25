@@ -11,6 +11,8 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
+import ReactMarkdown from 'react-markdown';
+import { useRef, useEffect } from 'react';
 
 //interface for chat panel component
 interface Message {
@@ -49,6 +51,9 @@ export function ChatPanel({}: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+
+  //The Auto-Scroll Anchor
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -96,6 +101,11 @@ export function ChatPanel({}: ChatPanelProps) {
     setInput(question);
   };
 
+  //Automatically scroll down whenever the 'messages' array changes
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping]);
+
   return (
     // Chat Panel Card
     <Card className="h-[600px] lg:sticky lg:top-24 flex flex-col">
@@ -115,15 +125,16 @@ export function ChatPanel({}: ChatPanelProps) {
       </CardHeader>
 
       {/* Card Content with Messages */}
-      <CardContent className="flex-1 flex flex-col p-0">
+      <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
+            
             {/* Render each message */}
             {messages.map((message) => (
               // Individual Message Container
               <div
                 key={message.id}
-                className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
+                className={`flex gap-3 w-full ${message.role === "user" ? "flex-row-reverse" : ""}`}
               >
                 {/* Avatar for User or Assistant */}
                 <Avatar
@@ -138,21 +149,29 @@ export function ChatPanel({}: ChatPanelProps) {
                   </AvatarFallback>
                 </Avatar>
 
-                {/* Message Bubble */}
+                {/* UPGRADED Message Bubble: max-w-[80%], break-words, and overflow-hidden */}
                 <div
-                  className={`flex-1 rounded-lg p-3 ${
+                  className={`rounded-lg p-3 max-w-[80%] break-words overflow-hidden ${
                     message.role === "user"
-                      ? "bg-emerald-600 text-white ml-8"
-                      : "bg-gray-100 text-gray-900 mr-8"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-gray-100 text-gray-900"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-line">
-                    {message.content}
-                  </p>
+                  {/* THE TEXT FIX: ReactMarkdown for AI, standard pre-wrap for User */}
+                  {message.role === "assistant" ? (
+                    <div className="prose prose-sm max-w-none text-gray-900 prose-p:leading-relaxed prose-pre:bg-gray-200">
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
-            {/*chatbot layout and design*/}
+
+            {/* Typing Indicator */}
             {isTyping && (
               <div className="flex gap-3">
                 <Avatar className="w-8 h-8 flex-shrink-0 bg-emerald-100">
@@ -160,24 +179,19 @@ export function ChatPanel({}: ChatPanelProps) {
                     <Bot className="w-4 h-4 text-emerald-600" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="bg-gray-100 rounded-lg p-3">
+                <div className="bg-gray-100 rounded-lg p-4">
                   <div className="flex gap-1">
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    ></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
                   </div>
                 </div>
               </div>
             )}
+            
+            {/* Auto-Scroll Anchor: This invisible div acts as the target for our scroller */}
+            <div ref={messagesEndRef} />
+
           </div>
         </ScrollArea>
 
@@ -202,7 +216,6 @@ export function ChatPanel({}: ChatPanelProps) {
         )}
 
         {/* input area for user to type questions */}
-
         <div className="p-4 border-t bg-white">
           <div className="flex gap-2">
             <Textarea
@@ -220,7 +233,7 @@ export function ChatPanel({}: ChatPanelProps) {
             <Button
               onClick={handleSend}
               disabled={!input.trim() || isTyping}
-              className="self-end"
+              className="self-end bg-emerald-600 hover:bg-emerald-700"
             >
               <Send className="w-4 h-4" />
             </Button>
