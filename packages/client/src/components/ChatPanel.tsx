@@ -164,7 +164,7 @@ export function ChatPanel({}: ChatPanelProps) {
                 key={message.id}
                 className={`flex gap-3 w-full ${message.role === "user" ? "flex-row-reverse" : ""}`}
               >
-                <Avatar className={`w-8 h-8 flex-shrink-0 shadow-sm ${message.role === "assistant" ? "bg-emerald-100" : "bg-white border"}`}>
+                <Avatar className={`w-8 h-8 flex-shrink-0 shadow-sm flex items-center justify-center ${message.role === "assistant" ? "bg-emerald-100" : "bg-white border"}`}>
                   {message.role === "assistant" ? <Bot className="w-4 h-4 text-emerald-600" /> : <User className="w-4 h-4 text-gray-600" />}
                 </Avatar>
 
@@ -189,7 +189,7 @@ export function ChatPanel({}: ChatPanelProps) {
 
             {isTyping && (
                <div className="flex gap-3">
-                 <Avatar className="w-8 h-8 flex-shrink-0 bg-emerald-100 shadow-sm"><Bot className="w-4 h-4 text-emerald-600" /></Avatar>
+                 <Avatar className="w-8 h-8 flex-shrink-0 bg-emerald-100 shadow-sm flex items-center justify-center"><Bot className="w-4 h-4 text-emerald-600" /></Avatar>
                  <div className="bg-white border rounded-2xl rounded-tl-sm p-4 shadow-sm flex items-center h-[44px]">
                    <div className="flex gap-1.5">
                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
