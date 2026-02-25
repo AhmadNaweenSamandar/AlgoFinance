@@ -103,6 +103,8 @@ export function ChatPanel({}: ChatPanelProps) {
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setInput(""); // Clear the input box
 
+    setIsTyping(true); // TYPING INDICATOR TURN ON
+
     try {
       // 2. Send JUST this new message to your backend API
       const response = await fetch("http://localhost:8000/api/chat", {
@@ -127,6 +129,8 @@ export function ChatPanel({}: ChatPanelProps) {
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
     } catch (error) {
       console.error("Chat API broke:", error);
+    } finally {
+      setIsTyping(false); // TYPING INDICATOR TURN OFF
     }
   };
 
@@ -244,18 +248,34 @@ export function ChatPanel({}: ChatPanelProps) {
         </div>
       </div>
 
-      {/* THE FIX: TELEPORT THE MODAL TO THE DOCUMENT BODY */}
+      {/* THE FIX: STRICT INLINE STYLES FOR TELEPORTATION */}
       {isModalOpen && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div 
+          style={{ 
+            position: 'fixed', 
+            top: 0, left: 0, right: 0, bottom: 0, 
+            zIndex: 99999, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}
+          className="p-4 sm:p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+        >
           
           {/* Click outside to close */}
-          <div className="absolute inset-0" onClick={() => setIsModalOpen(false)} />
+          <div 
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+            onClick={() => setIsModalOpen(false)} 
+          />
 
-          <div className="relative w-full max-w-3xl h-[85vh] animate-in zoom-in-95 duration-200">
+          <div 
+            style={{ position: 'relative', width: '100%', maxWidth: '48rem', height: '85vh', zIndex: 100000 }}
+            className="animate-in zoom-in-95 duration-200"
+          >
             {/* The Close Button */}
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute -top-12 right-0 md:-right-12 md:top-0 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors z-50"
+              className="absolute -top-12 right-0 md:-right-12 md:top-0 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
@@ -265,7 +285,7 @@ export function ChatPanel({}: ChatPanelProps) {
           </div>
 
         </div>,
-        document.body // This is the magic line that teleports the HTML!
+        document.body 
       )}
     </>
   );
