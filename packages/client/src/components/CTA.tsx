@@ -38,7 +38,7 @@ export function CTA() {
               Ready to Understand Your Finances?
             </h2>
             <p className="text-xl text-emerald-100 mb-8 max-w-2xl mx-auto">
-              AlgoFinance helps you save more and spend smarter.
+              AlgoFinance helps you understand your finances and spend smarter with out any cost.
             </p>
 
             {/* CTA Button */}
@@ -49,14 +49,17 @@ export function CTA() {
                 className="gap-2"
                 onClick={handleStartFree}
               >
-                Start Free
+                I'm interested
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </div>
             {/* Trust Signals / Footer Text */}
             <p className="text-sm text-emerald-100 mt-6">
-              AlgoFinance • A personal project implementing ML/AI by Ahmad
-              Naween Samandar
+              AlgoFinance • Personal project equipped with Machine Learning & Artifical Intelligence
+            </p>
+            <p className="text-sm text-emerald-100 mt-6">
+              Made with ❤️ by <b>Ahmad
+              Naween Samandar</b>
             </p>
           </div>
         </div>
