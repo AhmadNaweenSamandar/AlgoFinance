@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription } from "./ui/card";
-import { Brain, PiggyBank, Target, TrendingUp, Shield, Tag } from "lucide-react";
+import { Brain, PiggyBank, Target, TrendingUp, Shield, Tag, Bot } from "lucide-react";
 
 
 
@@ -18,24 +18,9 @@ const features = [
     description: "Get detailed insights into your spending patterns and identify areas to save.",
   },
   {
-    icon: PiggyBank,
-    title: "Monthly Savings Tracker",
-    description: "Track your monthly savings goals and see your progress over time.",
-  },
-  {
-    icon: Target,
-    title: "Goal-Based Advice",
-    description: "Receive personalized financial suggestions based on your specific goals.",
-  },
-  {
-    icon: Shield,
-    title: "Bank-Level Security",
-    description: "Your financial data is encrypted and never shared. Complete privacy guaranteed.",
-  },
-  {
-    icon: Tag,
-    title: "Custom Categories",
-    description: "Create and manage custom spending categories tailored to your lifestyle.",
+    icon: Bot,
+    title: "Gabina: Financial Assistant",
+    description: "Ask any question from Gabina and learn more about saving tricks and detailed insights.",
   },
 ];
 
