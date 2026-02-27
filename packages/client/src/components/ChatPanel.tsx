@@ -52,10 +52,12 @@ const sampleQuestions = [
 // Pass the scrollRef into the component's props
 const TypewriterMarkdown = ({ 
   content, 
-  scrollRef 
+  scrollRef,
+  onComplete //Fix: text regeneration
 }: { 
   content: string; 
-  scrollRef: React.RefObject<HTMLDivElement> 
+  scrollRef: React.RefObject<HTMLDivElement>;
+  onComplete: () => void;
 }) => {
   const [displayedContent, setDisplayedContent] = useState("");
 
@@ -76,11 +78,13 @@ const TypewriterMarkdown = ({
 
       if (index > safeContent.length) {
         clearInterval(timer);
+        onComplete(); // THE FIX: Tell the parent component we are done typing!
       }
     }, 15); 
 
     return () => clearInterval(timer);
-  }, [content, scrollRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content, scrollRef]); // We intentionally leave onComplete out to prevent infinite loops
 
   return <ReactMarkdown>{displayedContent}</ReactMarkdown>;
 };
@@ -166,6 +170,16 @@ export function ChatPanel({}: ChatPanelProps) {
     }
   };
 
+  // THE ANIMATION KILL SWITCH
+  // When a message finishes typing, this permanently disables its typewriter effect
+  const handleAnimationComplete = (messageId: number) => {
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) =>
+        msg.id === messageId ? { ...msg, animate: false } : msg
+      )
+    );
+  };
+
   const handleQuestionClick = (question: string) => {
     setInput(question);
   };
@@ -210,6 +224,7 @@ export function ChatPanel({}: ChatPanelProps) {
                         <TypewriterMarkdown 
                         content={message.content}
                         scrollRef={messagesEndRef} /* THE FIX: Hand the anchor to the typewriter */ />
+                        onComplete={() => handleAnimationComplete(message.id)} /* THE FIX: Pass the ID to the kill switch */
                       ) : (
                         <ReactMarkdown>{message.content}</ReactMarkdown>
                       )}
