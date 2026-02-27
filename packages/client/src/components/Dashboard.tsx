@@ -305,7 +305,6 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               <div className="text-2xl mb-1">
                 ${financialData.summary.total_income.toLocaleString()}
               </div>
-              <p className="text-xs text-green-600">+12% from last month</p>
             </CardContent>
           </Card>
           {/**Total Expenses */}
@@ -318,7 +317,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               <div className="text-2xl mb-1">
                 ${financialData.summary.total_expenses.toLocaleString()}
               </div>
-              <p className="text-xs text-red-600">+8% from last month</p>
+
             </CardContent>
           </Card>
           {/* Net Saving */}
