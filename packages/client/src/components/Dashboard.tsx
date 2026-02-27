@@ -32,6 +32,10 @@ import { TransactionsTable } from "./TransactionsTable";
 import { InsightsCharts } from "./InsightsCharts";
 import { ChatPanel } from "./ChatPanel";
 
+//imports for generating pdf report
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+
 // Mock data
 const mockTransactions = [
   {
@@ -201,6 +205,70 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
     toast.success("Report exported successfully!");
   };
 
+  // THE PDF EXPORT ENGINE
+  const handleExportPDF = () => {
+    // 1. Create a new PDF document
+    const doc = new jsPDF();
+    const today = new Date().toLocaleDateString();
+
+    // 2. Add the Header/Branding
+    doc.setFontSize(22);
+    doc.setTextColor(16, 185, 129); // Tailwind Emerald-500
+    doc.text("AlgoFinance", 14, 20);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(50, 50, 50);
+    doc.text("Personal Finance Report", 14, 30);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated on: ${today}`, 14, 36);
+
+    // 3. Add the Category Spending Summary Table
+    // We map your JSON array into a simple 2D array [["Food", "$400.00"], ...]
+    const categoryRows = financialData.overview.map(item => [
+      item.category,
+      `$${item.amount.toFixed(2)}`,
+      `${item.percentage}%`
+    ]);
+
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Spending by Category", 14, 50);
+
+    autoTable(doc, {
+      startY: 55,
+      head: [['Category', 'Amount', 'Percentage']],
+      body: categoryRows,
+      theme: 'grid',
+      headStyles: { fillColor: [16, 185, 129] }, // Emerald Green header
+    });
+
+    // 4. Add the Detailed Transactions Table
+    // We use doc.lastAutoTable.finalY to know exactly where the last table ended!
+    const finalY = (doc as any).lastAutoTable.finalY || 55;
+
+    const transactionRows = financialData.transactions.map(t => [
+      t.date,
+      t.description,
+      t.category,
+      `$${t.amount.toFixed(2)}`
+    ]);
+
+    doc.text("Transaction History", 14, finalY + 15);
+
+    autoTable(doc, {
+      startY: finalY + 20,
+      head: [['Date', 'Description', 'Category', 'Amount']],
+      body: transactionRows,
+      theme: 'striped',
+      headStyles: { fillColor: [55, 65, 81] }, // Dark Gray header for contrast
+    });
+
+    // 5. Trigger the download!
+    doc.save(`AlgoFinance_Report_${today.replace(/\//g, '-')}.pdf`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Dashboard Header */}
@@ -216,7 +284,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               <span className="text-xl">AlgoFinance</span>
             </div>
             {/* Button handling export report for the user */}
-            <Button onClick={handleExport} className="gap-2">
+            <Button onClick={handleExportPDF} className="gap-2"> {/* handleExportPDF function added in onClick */}
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export Report</span>
             </Button>
