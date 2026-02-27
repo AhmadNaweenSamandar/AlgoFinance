@@ -49,23 +49,38 @@ const sampleQuestions = [
 
 // THE TYPEWRITER COMPONENT
 // This takes a string of markdown and slowly reveals it character by character
-const TypewriterMarkdown = ({ content }: { content: string }) => {
-const [displayedContent, setDisplayedContent] = useState("");
+// Pass the scrollRef into the component's props
+const TypewriterMarkdown = ({ 
+  content, 
+  scrollRef 
+}: { 
+  content: string; 
+  scrollRef: React.RefObject<HTMLDivElement> 
+}) => {
+  const [displayedContent, setDisplayedContent] = useState("");
 
-useEffect(() => {
+  useEffect(() => {
     let index = 0;
-    setDisplayedContent(""); // Reset when new content arrives
+    setDisplayedContent(""); 
+    const safeContent = content || ""; 
     
     const timer = setInterval(() => {
-      setDisplayedContent(content.slice(0, index));
-      index++;
-      if (index > content.length) {
+      setDisplayedContent(safeContent.slice(0, index));
+      index += 2; // typing 2 chars at a time makes it look a bit smoother!
+      
+      // THE SCROLL FIX: Pull the screen down on every tick!
+      // We use "auto" instead of "smooth" to prevent violent stuttering every 15ms
+      if (scrollRef && scrollRef.current) {
+        scrollRef.current.scrollIntoView({ behavior: "auto" });
+      }
+
+      if (index > safeContent.length) {
         clearInterval(timer);
       }
-    }, 15); // Adjust this number (15ms) to make Gabina type faster or slower!
+    }, 15); 
 
     return () => clearInterval(timer);
-  }, [content]);
+  }, [content, scrollRef]);
 
   return <ReactMarkdown>{displayedContent}</ReactMarkdown>;
 };
@@ -175,7 +190,9 @@ export function ChatPanel({}: ChatPanelProps) {
                     <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800">
                       {/* THE TYPEWRITER LOGIC: Only animate the message if the flag is true! */}
                       {message.animate ? (
-                        <TypewriterMarkdown content={message.content} />
+                        <TypewriterMarkdown 
+                        content={message.content}
+                        scrollRef={messagesEndRef} /* THE FIX: Hand the anchor to the typewriter */ />
                       ) : (
                         <ReactMarkdown>{message.content}</ReactMarkdown>
                       )}
