@@ -100,20 +100,19 @@ export function ChatPanel({}: ChatPanelProps) {
 
   // THE BODY SCROLL LOCK
   // This prevents the dashboard from scrolling while the chat pop-up is active
+  // UPGRADED: Auto-Scroll Anchor
+  // Now triggers on new messages, typing, AND when the modal opens
   useEffect(() => {
     if (isModalOpen) {
-      // Lock the background
-      document.body.style.overflow = 'hidden';
+      // When opening the modal, wait 10ms for the Portal to render, then snap instantly ("auto")
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 10);
     } else {
-      // Unlock the background when closed
-      document.body.style.overflow = 'unset';
+      // During normal chatting, scroll smoothly
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-
-    // Cleanup function: If the component unmounts, make sure to unlock the screen!
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isModalOpen]); // Re-run this exactly when isModalOpen changes
+  }, [messages, isTyping, isModalOpen]); // NEW: Added isModalOpen to the dependency array
 
   //The Auto-Scroll Anchor
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -221,10 +220,13 @@ export function ChatPanel({}: ChatPanelProps) {
                     <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800">
                       {/* THE TYPEWRITER LOGIC: Only animate the message if the flag is true! */}
                       {message.animate ? (
-                        <TypewriterMarkdown 
+                        <TypewriterMarkdown
                         content={message.content}
-                        scrollRef={messagesEndRef} /* THE FIX: Hand the anchor to the typewriter */ />
+                        scrollRef={messagesEndRef} /* THE FIX: Hand the anchor to the typewriter */
                         onComplete={() => handleAnimationComplete(message.id)} /* THE FIX: Pass the ID to the kill switch */
+                        />
+                        
+                        
                       ) : (
                         <ReactMarkdown>{message.content}</ReactMarkdown>
                       )}
