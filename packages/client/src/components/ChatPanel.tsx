@@ -94,6 +94,23 @@ export function ChatPanel({}: ChatPanelProps) {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // THE BODY SCROLL LOCK
+  // This prevents the dashboard from scrolling while the chat pop-up is active
+  useEffect(() => {
+    if (isModalOpen) {
+      // Lock the background
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Unlock the background when closed
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function: If the component unmounts, make sure to unlock the screen!
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isModalOpen]); // Re-run this exactly when isModalOpen changes
+
   //The Auto-Scroll Anchor
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -260,7 +277,7 @@ export function ChatPanel({}: ChatPanelProps) {
           onClick={() => setIsModalOpen(true)}
         >
            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-teal text-sm px-4 py-2 rounded-full shadow-lg font-medium">
-              Click to chat with Gabina
+              
            </div>
         </div>
       </div>
