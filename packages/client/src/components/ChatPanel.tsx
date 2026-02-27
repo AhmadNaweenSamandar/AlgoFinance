@@ -217,7 +217,7 @@ export function ChatPanel({}: ChatPanelProps) {
                   isActive && handleSend(); // Only send if modal is active
                 }
               }}
-              className="min-h-[60px] resize-none focus-visible:ring-emerald-500"
+              className="min-h-[60px] resize-none focus-visible:outline-none focus-visible:!ring-2 focus-visible:!ring-emerald-500 focus-visible:!border-emerald-500"
               disabled={!isActive} // Disable typing if we are just looking at the background preview
             />
             <Button
