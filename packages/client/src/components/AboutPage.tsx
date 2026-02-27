@@ -110,7 +110,7 @@ export function AboutPage() {
               Start here
             </button>
             <button
-            
+            onClick={() => window.open("https://iamnaween.com, "_blank", "noopener,noreferrer")} 
             className="px-8 py-3 border-2 border-gray-300 rounded-lg hover:border-emerald-300 transition-all">
               Visit my Personal Website
             </button>
