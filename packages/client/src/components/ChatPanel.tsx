@@ -6,11 +6,14 @@ import {
   CardContent,
   CardDescription,
 } from "./ui/card";
-import { Sparkles, User, Bot, Send } from "lucide-react";
+import { Sparkles, User, Bot, Send, X } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
+import ReactMarkdown from 'react-markdown';
+import { useRef, useEffect } from 'react';
+import { createPortal } from "react-dom";
 
 //interface for chat panel component
 interface Message {
@@ -18,6 +21,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  animate?: boolean; // NEW: Tells the UI to use the typewriter effect
 }
 
 //chat panel props
@@ -30,7 +34,7 @@ const initialMessages: Message[] = [
     id: 1,
     role: "assistant",
     content:
-      "Hi! I'm your AI financial advisor. I can help you understand your spending, suggest savings strategies, and answer questions about your finances. What would you like to know?",
+      "Hi! My name is Gabina, I'm your AI financial assistant. I can help you understand your spending, suggest savings strategies, and answer questions about your finances. How can I help you today?",
     timestamp: new Date(),
   },
 ];
@@ -39,9 +43,51 @@ const initialMessages: Message[] = [
 const sampleQuestions = [
   "How can I reduce my spending?",
   "What's my biggest expense?",
-  "Am I on track for my savings goal?",
+  "What's my lowest expense?",
   "Show me dining trends",
 ];
+
+// THE TYPEWRITER COMPONENT
+// This takes a string of markdown and slowly reveals it character by character
+// Pass the scrollRef into the component's props
+const TypewriterMarkdown = ({ 
+  content, 
+  scrollRef,
+  onComplete //Fix: text regeneration
+}: { 
+  content: string; 
+  scrollRef: React.RefObject<HTMLDivElement>;
+  onComplete: () => void;
+}) => {
+  const [displayedContent, setDisplayedContent] = useState("");
+
+  useEffect(() => {
+    let index = 0;
+    setDisplayedContent(""); 
+    const safeContent = content || ""; 
+    
+    const timer = setInterval(() => {
+      setDisplayedContent(safeContent.slice(0, index));
+      index += 2; // typing 2 chars at a time makes it look a bit smoother!
+      
+      // THE SCROLL FIX: Pull the screen down on every tick!
+      // We use "auto" instead of "smooth" to prevent violent stuttering every 15ms
+      if (scrollRef && scrollRef.current) {
+        scrollRef.current.scrollIntoView({ behavior: "auto" });
+      }
+
+      if (index > safeContent.length) {
+        clearInterval(timer);
+        onComplete(); // THE FIX: Tell the parent component we are done typing!
+      }
+    }, 15); 
+
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content, scrollRef]); // We intentionally leave onComplete out to prevent infinite loops
+
+  return <ReactMarkdown>{displayedContent}</ReactMarkdown>;
+};
 
 //initial messages for chat panel
 export function ChatPanel({}: ChatPanelProps) {
@@ -50,10 +96,37 @@ export function ChatPanel({}: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
-  const handleSend = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // THE BODY SCROLL LOCK
+  // This prevents the dashboard from scrolling while the chat pop-up is active
+  // UPGRADED: Auto-Scroll Anchor
+  // Now triggers on new messages, typing, AND when the modal opens
+  useEffect(() => {
+    if (isModalOpen) {
+      // When opening the modal, wait 10ms for the Portal to render, then snap instantly ("auto")
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 10);
+    } else {
+      // During normal chatting, scroll smoothly
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isTyping, isModalOpen]); // NEW: Added isModalOpen to the dependency array
+
+  //The Auto-Scroll Anchor
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  //Automatically scroll down whenever the 'messages' array changes
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping]);
+
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     //update messages with user input
+    // 1. Instantly put the User's message on the screen
     const userMessage: Message = {
       id: messages.length + 1,
       role: "user",
@@ -61,186 +134,210 @@ export function ChatPanel({}: ChatPanelProps) {
       timestamp: new Date(),
     };
     //update messages state
-    setMessages([...messages, userMessage]);
-    setInput("");
-    setIsTyping(true);
+    // Add it to the array while keeping the old messages
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    setInput(""); // Clear the input box
 
-    // Simulate AI response
-    // In real implementation, this would be an API call
-    setTimeout(() => {
-      const aiResponse = generateResponse(input);
+    setIsTyping(true); // TYPING INDICATOR TURN ON
+
+    try {
+      // 2. Send JUST this new message to your backend API
+      const response = await fetch("http://localhost:8000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // We package the text into a tiny JSON envelope to send it over
+        body: JSON.stringify({ question: userMessage.content }),
+      });
+
+      const data = await response.json();
+
+      // 3. The backend replies with JSON containing the AI's answer!
       const assistantMessage: Message = {
         id: messages.length + 2,
         role: "assistant",
-        content: aiResponse,
+        content: data.answer, // The text generated by your Python LLM
         timestamp: new Date(),
+        animate: true, //Trigger the typewriter for this specific message!
       };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsTyping(false);
-    }, 1500);
+
+      // 4. Add the AI's message to the screen
+      setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+    } catch (error) {
+      console.error("Chat API broke:", error);
+    } finally {
+      setIsTyping(false); // TYPING INDICATOR TURN OFF
+    }
+  };
+
+  // THE ANIMATION KILL SWITCH
+  // When a message finishes typing, this permanently disables its typewriter effect
+  const handleAnimationComplete = (messageId: number) => {
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) =>
+        msg.id === messageId ? { ...msg, animate: false } : msg
+      )
+    );
   };
 
   const handleQuestionClick = (question: string) => {
     setInput(question);
   };
 
-  //function to generate mock ai response based on user question
-  const generateResponse = (question: string): string => {
-    const lowerQ = question.toLowerCase();
-
-    if (lowerQ.includes("reduce") || lowerQ.includes("save")) {
-      return "Based on your spending patterns, here are my top 3 recommendations:\n\n1. **Shopping**: You spent $412.89 this month (24% of expenses). Try setting a monthly limit of $300.\n\n2. **Dining Out**: At $245.67, consider meal prepping to cut this by 30-40%.\n\n3. **Subscriptions**: Review your $67.94/month in subscriptions - you might find services you no longer use.\n\nImplementing these could save you ~$300/month!";
-    }
-
-    if (lowerQ.includes("biggest") || lowerQ.includes("most")) {
-      return "Your biggest expense category this month is **Shopping** at $412.89 (24% of total spending). This is 18% higher than last month. Would you like tips on reducing shopping expenses?";
-    }
-
-    if (lowerQ.includes("goal") || lowerQ.includes("track")) {
-      return "Great news! You're saving 61.3% of your income ($2,760.58 this month). At this rate:\n\n✅ Emergency fund ($10,000): 4 months\n✅ Vacation fund ($3,000): 1.5 months\n✅ New laptop ($2,000): 1 month\n\nYou're doing excellent! Keep up the momentum.";
-    }
-
-    if (lowerQ.includes("dining") || lowerQ.includes("food")) {
-      return "Your dining spending breakdown:\n\n🍽️ **Restaurants**: $182.45 (74%)\n🍕 **Fast Food**: $43.22 (18%)\n☕ **Coffee Shops**: $20.00 (8%)\n\n**Trend**: Up 15% from last month. Consider setting a weekly dining budget of $50 to bring this down.";
-    }
-
-    return "I've analyzed your question. Based on your current financial data, you're in a strong position with a 61.3% savings rate. Your top spending categories are Shopping (24%), Groceries (22%), and Utilities (16%). Is there a specific area you'd like me to dive deeper into?";
-  };
-
-  return (
-    // Chat Panel Card
-    <Card className="h-[600px] lg:sticky lg:top-24 flex flex-col">
-      {/* Card Header with Title and Description */}
-      <CardHeader className="border-b">
+  // ONE UI TO RULE THEM ALL
+  // We put the chat layout in a function so we can render it in the background AND in the pop-up
+  const renderChatInterface = (isActive: boolean) => (
+    <Card className="h-full flex flex-col relative w-full bg-white shadow-xl">
+      <CardHeader className="border-b bg-white rounded-xl">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-full flex items-center justify-center shadow-inner">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
             <CardTitle>Gabina</CardTitle>
-            <CardDescription>
-              Ask me anything about your finances
-            </CardDescription>
+            <CardDescription>Ask me anything about your finances</CardDescription>
           </div>
         </div>
       </CardHeader>
 
-      {/* Card Content with Messages */}
-      <CardContent className="flex-1 flex flex-col p-0">
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            {/* Render each message */}
+      {/* THE SCROLL FIX: Replaced ScrollArea with standard overflow-y-auto */}
+      <CardContent className="flex-1 flex flex-col p-0 overflow-hidden bg-gray-50/50">
+        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+          <div className="space-y-6">
+            
             {messages.map((message) => (
-              // Individual Message Container
               <div
                 key={message.id}
-                className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
+                className={`flex gap-3 w-full ${message.role === "user" ? "flex-row-reverse" : ""}`}
               >
-                {/* Avatar for User or Assistant */}
-                <Avatar
-                  className={`w-8 h-8 flex-shrink-0 ${message.role === "assistant" ? "bg-emerald-100" : "bg-gray-100"}`}
-                >
-                  <AvatarFallback>
-                    {message.role === "assistant" ? (
-                      <Bot className="w-4 h-4 text-emerald-600" />
-                    ) : (
-                      <User className="w-4 h-4 text-gray-600" />
-                    )}
-                  </AvatarFallback>
+                <Avatar className={`w-8 h-8 flex-shrink-0 shadow-sm flex items-center justify-center ${message.role === "assistant" ? "bg-emerald-100" : "bg-white border"}`}>
+                  {message.role === "assistant" ? <Bot className="w-4 h-4 text-emerald-600" /> : <User className="w-4 h-4 text-gray-600" />}
                 </Avatar>
 
-                {/* Message Bubble */}
-                <div
-                  className={`flex-1 rounded-lg p-3 ${
-                    message.role === "user"
-                      ? "bg-emerald-600 text-white ml-8"
-                      : "bg-gray-100 text-gray-900 mr-8"
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-line">
-                    {message.content}
-                  </p>
+                <div className={`rounded-2xl p-4 max-w-[85%] break-words shadow-sm ${
+                    message.role === "user" ? "bg-emerald-600 text-white rounded-tr-sm" : "bg-white border text-gray-900 rounded-tl-sm"
+                }`}>
+                  {message.role === "assistant" ? (
+                    <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800">
+                      {/* THE TYPEWRITER LOGIC: Only animate the message if the flag is true! */}
+                      {message.animate ? (
+                        <TypewriterMarkdown
+                        content={message.content}
+                        scrollRef={messagesEndRef} /* THE FIX: Hand the anchor to the typewriter */
+                        onComplete={() => handleAnimationComplete(message.id)} /* THE FIX: Pass the ID to the kill switch */
+                        />
+                        
+                        
+                      ) : (
+                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  )}
                 </div>
               </div>
             ))}
-            {/*chatbot layout and design*/}
+
             {isTyping && (
-              <div className="flex gap-3">
-                <Avatar className="w-8 h-8 flex-shrink-0 bg-emerald-100">
-                  <AvatarFallback>
-                    <Bot className="w-4 h-4 text-emerald-600" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="bg-gray-100 rounded-lg p-3">
-                  <div className="flex gap-1">
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    ></div>
-                    <div
-                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
+               <div className="flex gap-3">
+                 <Avatar className="w-8 h-8 flex-shrink-0 bg-emerald-100 shadow-sm flex items-center justify-center"><Bot className="w-4 h-4 text-emerald-600" /></Avatar>
+                 <div className="bg-white border rounded-2xl rounded-tl-sm p-4 shadow-sm flex items-center h-[44px]">
+                   <div className="flex gap-1.5">
+                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                   </div>
+                 </div>
+               </div>
             )}
+            
+            <div ref={messagesEndRef} className="h-1" />
           </div>
-        </ScrollArea>
+        </div>
 
-        {/* Input suggestion area for user  */}
-        {messages.length === 1 && (
-          <div className="p-4 border-t bg-gray-50">
-            <p className="text-xs text-gray-600 mb-2">Try asking:</p>
-            <div className="flex flex-wrap gap-2">
-              {sampleQuestions.map((question, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => handleQuestionClick(question)}
-                >
-                  {question}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* input area for user to type questions */}
-
+        {/* Input Area */}
         <div className="p-4 border-t bg-white">
           <div className="flex gap-2">
             <Textarea
-              placeholder="Ask about your spending, savings, or goals..."
+              placeholder="Ask Gabina..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  handleSend();
+                  isActive && handleSend(); // Only send if modal is active
                 }
               }}
-              className="min-h-[60px] resize-none"
+              className="min-h-[60px] resize-none focus-visible:outline-none focus-visible:!ring-2 focus-visible:!ring-emerald-500 focus-visible:!border-emerald-500"
+              disabled={!isActive} // Disable typing if we are just looking at the background preview
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim() || isTyping}
-              className="self-end"
+              disabled={!input.trim() || isTyping || !isActive}
+              className="self-end bg-emerald-600 hover:bg-emerald-700 shadow-md transition-transform active:scale-95"
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Press Enter to send, Shift+Enter for new line
-          </p>
         </div>
       </CardContent>
     </Card>
+  );
+
+  return (
+    <>
+      {/* THE DASHBOARD PREVIEW  */}
+      <div className="relative h-[600px] lg:sticky lg:top-24 group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-xl">
+        {renderChatInterface(false)}
+        <div 
+          className="absolute inset-0 z-10 bg-white/5 group-hover:bg-black/5 transition-colors rounded-xl flex items-center justify-center"
+          onClick={() => setIsModalOpen(true)}
+        >
+           <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-teal text-sm px-4 py-2 rounded-full shadow-lg font-medium">
+              
+           </div>
+        </div>
+      </div>
+
+      {/* THE FIX: STRICT INLINE STYLES FOR TELEPORTATION */}
+      {isModalOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          style={{ 
+            position: 'fixed', 
+            top: 0, left: 0, right: 0, bottom: 0, 
+            zIndex: 99999, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}
+          className="p-4 sm:p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+        >
+          
+          {/* Click outside to close */}
+          <div 
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+            onClick={() => setIsModalOpen(false)} 
+          />
+
+          <div 
+            style={{ position: 'relative', width: '100%', maxWidth: '48rem', height: '85vh', zIndex: 100000 }}
+            className="animate-in zoom-in-95 duration-200"
+          >
+            {/* The Close Button */}
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute -top-12 right-0 md:-right-12 md:top-0 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            {/* Render the FULL ACTIVE CHAT inside the modal! */}
+            {renderChatInterface(true)}
+          </div>
+
+        </div>,
+        document.body 
+      )}
+    </>
   );
 }
