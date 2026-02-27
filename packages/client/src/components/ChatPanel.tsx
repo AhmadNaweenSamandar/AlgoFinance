@@ -210,14 +210,15 @@ export function ChatPanel({}: ChatPanelProps) {
                 className={`flex gap-3 w-full ${message.role === "user" ? "flex-row-reverse" : ""}`}
               >
                 <Avatar className={`w-8 h-8 flex-shrink-0 shadow-sm flex items-center justify-center ${message.role === "assistant" ? "bg-emerald-100" : "bg-white border"}`}>
-                  {message.role === "assistant" ? <Bot className="w-4 h-4 text-emerald-600" /> : <User className="w-4 h-4 text-gray-600" />}
+                  {message.role === "assistant" ? <Bot className="w-4 h-4 text-emerald-600" /> : <User className="w-4 h-4 text-gray-900" />}
                 </Avatar>
 
                 <div className={`rounded-2xl p-4 max-w-[85%] break-words shadow-sm ${
                     message.role === "user" ? "bg-emerald-600 text-white rounded-tr-sm" : "bg-white border text-gray-900 rounded-tl-sm"
                 }`}>
                   {message.role === "assistant" ? (
-                    <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800">
+                    // THE ASSISTANT TEXT SIZE: Used `prose-base` (standard size) instead `prose-sm` (small size)
+                    <div className="prose prose-base max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-900">
                       {/* THE TYPEWRITER LOGIC: Only animate the message if the flag is true! */}
                       {message.animate ? (
                         <TypewriterMarkdown
@@ -232,7 +233,8 @@ export function ChatPanel({}: ChatPanelProps) {
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    //THE USER SIZE: Used `text-base` (standard size) intead of `text-sm` (small size) to match the assistant!
+                    <p className="text-base whitespace-pre-wrap">{message.content}</p>
                   )}
                 </div>
               </div>

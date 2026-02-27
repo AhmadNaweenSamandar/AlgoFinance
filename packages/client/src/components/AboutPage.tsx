@@ -106,11 +106,13 @@ export function AboutPage() {
             everything of your interest!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all">
+            <button 
+            onClick={() => onNavigate("home")}
+            className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all">
               Start here
             </button>
             <button
-            onClick={() => window.open("https://iamnaween.com, "_blank", "noopener,noreferrer")} 
+            onClick={() => window.open("https://iamnaween.com", "_blank", "noopener,noreferrer")} 
             className="px-8 py-3 border-2 border-gray-300 rounded-lg hover:border-emerald-300 transition-all">
               Visit my Personal Website
             </button>
