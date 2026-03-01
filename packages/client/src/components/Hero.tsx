@@ -42,9 +42,9 @@ const TypewriterLoader = ({ fileName }: { fileName: string }) => {
             setDisplayText(""); // Erase text
             setCurrentStep((prev) => prev + 1); // Move to next step
           }
-        }, 200); 
+        }, 280); 
       }
-    }, 15); // Typing speed: 30ms per character
+    }, 20); // Typing speed: 30ms per character
 
     return () => clearInterval(typingInterval);
   }, [currentStep, fileName]);
