@@ -166,7 +166,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
 
   // Calculate category spending from mock transactions
   const colors = {
-    Food: "#10b981",
+    Food: "#500fe9",
     Dining: "#f59e0b",
     Shopping: "#8b5cf6",
     Transport: "#3b82f6",
@@ -181,7 +181,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
   };
 
   const categorySpending = Object.entries(
-    mockTransactions
+    financialData.transactions
       .filter((t) => t.amount < 0)
       .reduce(
         (acc, t) => {
