@@ -1,6 +1,6 @@
 import { Button } from "./ui/button";
 import { Upload, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 //interface for second part of the main page
@@ -8,6 +8,49 @@ import { toast } from "sonner";
 interface HeroProps {
   onNavigate?: (page: string, data?: unknown) => void;
 }
+
+// The custom animated loader component
+const TypewriterLoader = ({ fileName }: { fileName: string }) => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [displayText, setDisplayText] = useState("");
+
+  useEffect(() => {
+    const steps = [
+      `Extracting data from ${fileName}...`,
+      "Normalizing financial data...",
+      "Predicting categories...",
+      "Generating dashboard..."
+    ];
+
+    if (currentStep >= steps.length) return;
+
+    const fullText = steps[currentStep];
+    let currentCharIndex = 0;
+
+    // 1. The Typing Effect (types one letter every 30ms)
+    const typingInterval = setInterval(() => {
+      setDisplayText(fullText.substring(0, currentCharIndex + 1));
+      currentCharIndex++;
+
+      // 2. When the sentence finishes typing
+      if (currentCharIndex === fullText.length) {
+        clearInterval(typingInterval);
+        
+        // 3. Wait exactly 0.3 seconds (300ms), then clear and start the next step
+        setTimeout(() => {
+          if (currentStep < steps.length - 1) {
+            setDisplayText(""); // Erase text
+            setCurrentStep((prev) => prev + 1); // Move to next step
+          }
+        }, 200); 
+      }
+    }, 15); // Typing speed: 30ms per character
+
+    return () => clearInterval(typingInterval);
+  }, [currentStep, fileName]);
+
+  return <span className="font-medium">{displayText}</span>;
+};
 
 export function Hero({ onNavigate }: HeroProps = {}) {
   // =========================================
@@ -42,9 +85,11 @@ export function Hero({ onNavigate }: HeroProps = {}) {
 
     if (!file) return; //if no file, stop here.
 
-    //1. START THE LOADING UX
+    // 1. START THE LOADING UX
     setIsUploading(true);
-    toast.loading(`Analyzing ${file.name}... Please wait.`); // using react-hot-toast
+    
+    // 2. Trigger the typewriter component inside the toast and save the ID!
+    const toastId = toast.loading(<TypewriterLoader fileName={file.name} />);
 
     try {
       //2. PACKAGE THE FILE (as like a Digital Envelope)
@@ -126,21 +171,21 @@ export function Hero({ onNavigate }: HeroProps = {}) {
 
         {/* === MAIN HEADLINE === */}
         <h1 className="mb-6">
-          Take Control of Your Finances with
+          Gabina, our smart chatbot help you
           {/* Gradient Text Technique:
               - bg-gradient-to-r: Sets the gradient colors.
               - bg-clip-text: Clips the background to the shape of the text.
               - text-transparent: Makes the text fill invisible so the background shows through.
           */}
           <span className="block bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-            Smart Spending Insights
+            Understand your Finances!
           </span>
         </h1>
         {/* Subheadline */}
         <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Upload your bank transactions and let our machine learning algorithms
-          automatically categorize spending, track savings, and provide
-          personalized financial advice.
+          Upload your monthly bank statement and let our machine learning algorithms
+          automatically categorize spending, create overview charts, and provide
+          smart insights with Artifical Inteligence.
         </p>
 
         {/* === CTA BUTTONS === */}
@@ -148,7 +193,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <Button size="lg" className="gap-2" onClick={handleGetStarted}>
             <Upload className="w-5 h-5" />
-            Get Started Free
+            Start Now
           </Button>
         </div>
 
@@ -197,7 +242,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
                 Drop your bank statement here or click to browse
               </p>
               <p className="text-sm text-gray-400 mt-2">
-                Supports CSV, Excel, PDF, and OFX files from all major banks
+                Supports Excel, and PDF files from all major banks
               </p>
             </label>
           </div>

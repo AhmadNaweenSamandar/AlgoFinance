@@ -40,7 +40,7 @@ def generate_dashboard_data(df: pd.DataFrame):
         "Utilities": "#eab308",  # Yellow
         "Loans": "#ef4444",  # Red
         "Entertainment": "#a855f7",  # Purple
-        "Transfer": "#97b806",  # light green
+        "Transfer": "#8c12b8",  # violet
         "Dining": "#BD0019",  # DarkRed
         "Shopping": "#8B008B",  # DarkMagenta
         "Health": "#3b82f6",  # Blue
@@ -75,47 +75,86 @@ def generate_dashboard_data(df: pd.DataFrame):
     # --- SECTION 4: INSIGHTS (The Colorful Squares) ---
     insights = []
 
-    # Insight 1: Saving Rate
+# Insight 1: Saving Rate (UPGRADED)
     saving_rate = (net_saving / total_income * 100) if total_income > 0 else 0
     if saving_rate > 20:
         insights.append(
             {
-                "title": "Great Saving Rate",
+                "title": "Exceptional Savings",
                 "value": f"{saving_rate:.1f}%",
                 "color": "green",
-                "desc": "You're saving effectively!",
+                "desc": "You are retaining a substantial portion of your income, successfully building a strong financial safety net.",
             }
         )
     elif saving_rate > 0:
         insights.append(
             {
-                "title": "Positive Flow",
+                "title": "Positive Cash Flow",
                 "value": f"{saving_rate:.1f}%",
                 "color": "blue",
-                "desc": "You're spending less than you earn.",
+                "desc": "Your income exceeds your expenses. Consider pushing this rate closer to the 20% benchmark for optimal wealth growth.",
             }
         )
     else:
         insights.append(
             {
-                "title": "High Spending",
+                "title": "Deficit Warning",
                 "value": f"{saving_rate:.1f}%",
                 "color": "red",
-                "desc": "Expenses exceeded income this period.",
+                "desc": "Your expenses exceeded your income this period. Review your discretionary spending to close this gap and avoid debt.",
             }
         )
 
-    # Insight 2: Top Expense
+    # Insight 2: Top Expense Category (UPGRADED)
     if overview_list:
         top_cat = overview_list[0]["category"]
+        top_amount = overview_list[0].get("amount", 0) 
+        
         insights.append(
             {
-                "title": "Top Spending",
+                "title": "Primary Expenditure",
                 "value": top_cat,
                 "color": "orange",
-                "desc": f"Highest expense category.",
+                "desc": f"At ${top_amount:.2f}, this is your heaviest spending area. Reducing costs here will have the highest immediate impact on your savings.",
             }
         )
+
+        # Insight 3: Goal Progress
+    # Dynamically sets a goal to save 20% of the month's total income
+    if total_income > 0:
+        target_saving = total_income * 0.20
+        
+        if net_saving >= target_saving:
+            # They hit or exceeded the 20% goal
+            insights.append(
+                {
+                    "title": "Goal Surpassed",
+                    "value": "100%",
+                    "color": "emerald",
+                    "desc": f"You exceeded the recommended 20% savings target. You successfully secured ${net_saving:,.2f} this period.",
+                }
+            )
+        elif net_saving > 0:
+            # They saved money, but haven't hit the 20% threshold yet
+            progress_pct = (net_saving / target_saving) * 100
+            insights.append(
+                {
+                    "title": "Goal Progress",
+                    "value": f"{progress_pct:.1f}%",
+                    "color": "blue",
+                    "desc": f"You are {progress_pct:.1f}% of the way to a healthy savings target of ${target_saving:,.2f}. Keep optimizing your expenses!",
+                }
+            )
+        else:
+            # They spent more than they made, so progress is 0
+            insights.append(
+                {
+                    "title": "Goal Off-Track",
+                    "value": "0%",
+                    "color": "red",
+                    "desc": f"Expenses outpaced income this period. Your baseline goal for the next cycle should be saving ${target_saving:,.2f}.",
+                }
+            )
 
     return {
         "summary": {

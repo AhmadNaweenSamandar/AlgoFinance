@@ -1,6 +1,7 @@
 import { Card, CardContent } from "./ui/card";
 import { Target } from "lucide-react";
-import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import myProfilePic from "../assets/ProfPic.jpg";
 
 export function AboutPage() {
   return (
@@ -16,9 +17,10 @@ export function AboutPage() {
               </span>
             </h1>
             <p className="text-xl text-gray-600">
-              This website is built to implemented personal finance analysis
-              with ML/AI technologies. It takes raw data in the form of a bank
-              statement or excel file and create simple dashboard and analysis.
+              This web application leverages machine learning and AI technologies
+               to analyze personal financial data. It accepts raw inputs in the form of PDF bank statements
+              or Excel files, performs data parsing and analysis, and generates an interactive dashboard 
+              with summarized insights and visualizations.
             </p>
           </div>
         </div>
@@ -33,16 +35,18 @@ export function AboutPage() {
                 <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center">
                   <Target className="w-6 h-6 text-white" />
                 </div>
-                <h2>Our Mission</h2>
+                <h2>My Goal</h2>
               </div>
               <p className="text-lg text-gray-600 mb-4">
-                My goal is to practice new technology stacks and skills such as
-                Python ML libraries, Algorithm Analysis, Data Parsing and
-                Chatbot modeling in my software engineering journey.
+                I aim to strengthen my software engineering expertise
+                by practicing modern technologies and advancing my skills
+                in Python machine learning libraries, algorithm analysis, 
+                data parsing, and chatbot modeling.
               </p>
               <p className="text-lg text-gray-600">
-                Frontend technologies such as React.js and CSS Tailwind combined
-                with PyTourch creates an unique personnal finance analyzer.
+                By combining React.js and Tailwind CSS for the frontend
+                with PyTorch for intelligent modeling, I developed a 
+                unique and powerful personal finance analyzer application.
               </p>
             </div>
             <div className="flex-1">
@@ -62,7 +66,7 @@ export function AboutPage() {
       <section className="container mx-auto px-4 py-16 md:py-24 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-4">
-            <h2 className="mb-4">Meet the Product Engineer</h2>
+            <h2 className="mb-4">Product Engineer</h2>
             <p className="text-xl text-gray-600">
               The person building AlgoFinance
             </p>
@@ -71,8 +75,12 @@ export function AboutPage() {
           <div className="flex justify-center mt-12">
             <Card className="border-2 text-center hover:border-emerald-200 transition-all max-w-sm">
               <CardContent className="p-6">
-                <Avatar className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-emerald-600 to-teal-600">
-                  <AvatarFallback className="text-white text-xl">
+                <Avatar className="w-20 h-20 mx-auto mb-4 shadow-md">
+
+                  {/* The image goes here! */}
+                  <AvatarImage src={myProfilePic} alt="Profile Picture" className="object-cover" />
+                  {/* If the image fails to load, Shadcn will automatically display these initials instead */}
+                  <AvatarFallback className="bg-gradient-to-br from-emerald-600 to-teal-600 text-white text-xl font-medium">
                     ANS
                   </AvatarFallback>
                 </Avatar>
@@ -98,11 +106,15 @@ export function AboutPage() {
             everything of your interest!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all">
+            <button 
+            onClick={() => onNavigate("home")}
+            className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all">
               Start here
             </button>
-            <button className="px-8 py-3 border-2 border-gray-300 rounded-lg hover:border-emerald-300 transition-all">
-              Visit my Website
+            <button
+            onClick={() => window.open("https://iamnaween.com", "_blank", "noopener,noreferrer")} 
+            className="px-8 py-3 border-2 border-gray-300 rounded-lg hover:border-emerald-300 transition-all">
+              Visit my Personal Website
             </button>
           </div>
         </div>

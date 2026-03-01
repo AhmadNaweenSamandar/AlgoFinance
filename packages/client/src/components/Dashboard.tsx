@@ -36,6 +36,9 @@ import { ChatPanel } from "./ChatPanel";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
+//CHANING LOGO: Import the actual file from assets folder!
+import algoFinanceLogo from "../assets/algo.jpg";
+
 // Mock data
 const mockTransactions = [
   {
@@ -166,7 +169,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
 
   // Calculate category spending from mock transactions
   const colors = {
-    Food: "#10b981",
+    Food: "#500fe9",
     Dining: "#f59e0b",
     Shopping: "#8b5cf6",
     Transport: "#3b82f6",
@@ -181,7 +184,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
   };
 
   const categorySpending = Object.entries(
-    mockTransactions
+    financialData.transactions
       .filter((t) => t.amount < 0)
       .reduce(
         (acc, t) => {
@@ -280,14 +283,29 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               className="flex items-center gap-2 cursor-pointer"
               onClick={() => onNavigate("home")}
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg"></div>
+              {/* Logo Icon Container */}
+          {/* ADDING LOGO: Added overflow-hidden to maintain rounded corner mask */}
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white p-0.5 shadow-inner">
+            <img 
+              src={algoFinanceLogo} // The imported variable from Step 1
+              alt="AlgoFinance Logo"
+              // THE FIX (Step 3): 'object-contain' forces logo to fit perfectly within the 32px box without cropping or stretching
+              className="max-w-full max-h-full object-contain" 
+            />
+          </div>
               <span className="text-xl">AlgoFinance</span>
             </div>
+            <div className="flex gap-1">
             {/* Button handling export report for the user */}
-            <Button onClick={handleExportPDF} className="gap-2"> {/* handleExportPDF function added in onClick */}
+            <Button  onClick={() => onNavigate("home")} className="gap-2 flex-1"> {/* redirect to home */}
+              <span className="hidden sm:inline">End Session</span>
+            </Button>
+            {/* Button handling export report for the user */}
+            <Button onClick={handleExportPDF} className="gap-2 flex-1"> {/* handleExportPDF function added in onClick */}
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export Report</span>
             </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -305,7 +323,6 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               <div className="text-2xl mb-1">
                 ${financialData.summary.total_income.toLocaleString()}
               </div>
-              <p className="text-xs text-green-600">+12% from last month</p>
             </CardContent>
           </Card>
           {/**Total Expenses */}
@@ -318,7 +335,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               <div className="text-2xl mb-1">
                 ${financialData.summary.total_expenses.toLocaleString()}
               </div>
-              <p className="text-xs text-red-600">+8% from last month</p>
+
             </CardContent>
           </Card>
           {/* Net Saving */}
@@ -496,26 +513,11 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
                         <PiggyBank className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
                         <div>
                           <h4 className="text-purple-900 mb-1">
-                            Goal Progress
+                            {financialData.insights[2].title}
                           </h4>
                           <p className="text-sm text-purple-800">
-                            At this rate, you'll reach your emergency fund goal
-                            of $10,000 in just 4 more months!
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-amber-50 border-l-4 border-amber-600 rounded">
-                      <div className="flex items-start gap-3">
-                        <Calendar className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="text-amber-900 mb-1">
-                            Subscription Reminder
-                          </h4>
-                          <p className="text-sm text-amber-800">
-                            You have 5 active subscriptions totaling
-                            $67.94/month. Review them to find potential savings.
+                            {financialData.insights[2].value} - {" "}
+                            {financialData.insights[2].desc}
                           </p>
                         </div>
                       </div>

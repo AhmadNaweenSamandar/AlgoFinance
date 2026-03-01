@@ -1,5 +1,7 @@
 import { Menu } from "lucide-react";
 import { useState } from "react";
+//THE FIX (Step 1): Import the actual file from assets folder!
+import algoFinanceLogo from "../assets/algo.jpg";
 
 //header interface created
 //contains two variables handling whether user navigate adertising pages
@@ -52,8 +54,16 @@ export function Header({ onNavigate }: HeaderProps) {
           className="flex items-center gap-2 cursor-pointer"
           onClick={() => handleNavClick("home")}
         >
-          {/* Logo Icon: A 32x32px rounded square with a Green/Teal gradient */}
-          <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg"></div>
+          {/* Logo Icon Container */}
+          {/* THE FIX (Step 2): Added overflow-hidden to maintain rounded corner mask */}
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white p-0.5 shadow-inner">
+            <img 
+              src={algoFinanceLogo} // The imported variable from Step 1
+              alt="AlgoFinance Logo"
+              // THE FIX (Step 3): 'object-contain' forces logo to fit perfectly within the 32px box without cropping or stretching
+              className="max-w-full max-h-full object-contain" 
+            />
+          </div>
 
           {/* Application Name */}
           <span className="text-xl">AlgoFinance</span>
