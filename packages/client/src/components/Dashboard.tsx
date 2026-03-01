@@ -495,26 +495,11 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
                         <PiggyBank className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
                         <div>
                           <h4 className="text-purple-900 mb-1">
-                            Goal Progress
+                            {financialData.insights[2].title}
                           </h4>
                           <p className="text-sm text-purple-800">
-                            At this rate, you'll reach your emergency fund goal
-                            of $10,000 in just 4 more months!
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-amber-50 border-l-4 border-amber-600 rounded">
-                      <div className="flex items-start gap-3">
-                        <Calendar className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="text-amber-900 mb-1">
-                            Subscription Reminder
-                          </h4>
-                          <p className="text-sm text-amber-800">
-                            You have 5 active subscriptions totaling
-                            $67.94/month. Review them to find potential savings.
+                            {financialData.insights[2].value} - {" "}
+                            {financialData.insights[2].desc}
                           </p>
                         </div>
                       </div>
