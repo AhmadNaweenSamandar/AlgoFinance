@@ -75,47 +75,91 @@ def generate_dashboard_data(df: pd.DataFrame):
     # --- SECTION 4: INSIGHTS (The Colorful Squares) ---
     insights = []
 
-    # Insight 1: Saving Rate
+    # Insight 1: Saving Rate (UPGRADED)
     saving_rate = (net_saving / total_income * 100) if total_income > 0 else 0
     if saving_rate > 20:
         insights.append(
             {
-                "title": "Great Saving Rate",
+                "title": "Exceptional Savings",
                 "value": f"{saving_rate:.1f}%",
                 "color": "green",
-                "desc": "You're saving effectively!",
+                "desc": "You are retaining a substantial portion of your income, successfully building a strong financial safety net.",
             }
         )
     elif saving_rate > 0:
         insights.append(
             {
-                "title": "Positive Flow",
+                "title": "Positive Cash Flow",
                 "value": f"{saving_rate:.1f}%",
                 "color": "blue",
-                "desc": "You're spending less than you earn.",
+                "desc": "Your income exceeds your expenses. Consider pushing this rate closer to the 20% benchmark for optimal wealth growth.",
             }
         )
     else:
         insights.append(
             {
-                "title": "High Spending",
+                "title": "Deficit Warning",
                 "value": f"{saving_rate:.1f}%",
                 "color": "red",
-                "desc": "Expenses exceeded income this period.",
+                "desc": "Your expenses exceeded your income this period. Review your discretionary spending to close this gap and avoid debt.",
             }
         )
 
-    # Insight 2: Top Expense
+    # Insight 2: Top Expense Category (UPGRADED)
     if overview_list:
         top_cat = overview_list[0]["category"]
+        # Assuming you have the amount available in your overview_list dictionary
+        top_amount = overview_list[0].get("amount", 0) 
+        
         insights.append(
             {
-                "title": "Top Spending",
+                "title": "Primary Expenditure",
                 "value": top_cat,
                 "color": "orange",
-                "desc": f"Highest expense category.",
+                "desc": f"At ${top_amount:.2f}, this is your heaviest spending area. Reducing costs here will have the highest immediate impact on your savings.",
             }
         )
+
+    # Insight 3: Largest Single Expense (NEW)
+    # This finds the single biggest transaction to warn the user about major outflows
+    if transactions: # Assuming you have access to the raw transactions list here
+        # Filter for expenses only (assuming expenses are negative numbers)
+        expenses = [t for t in transactions if t.get("amount", 0) < 0]
+        if expenses:
+            # Find the transaction with the lowest negative number (highest cost)
+            largest_expense = min(expenses, key=lambda x: x.get("amount", 0))
+            insights.append(
+                {
+                    "title": "Major Outflow Alert",
+                    "value": f"${abs(largest_expense.get('amount', 0)):.2f}",
+                    "color": "purple",
+                    "desc": f"Your single biggest purchase was for '{largest_expense.get('description', 'Unknown')}'. Ensure large expenses like this are planned.",
+                }
+            )
+
+    # Insight 4: Transaction Velocity (NEW)
+    # This tracks the behavioral habit of frequent, small purchases ("death by a thousand cuts")
+    if transactions:
+        expense_count = len([t for t in transactions if t.get("amount", 0) < 0])
+        
+        if expense_count > 40: # You can adjust this threshold based on what you consider "high"
+            insights.append(
+                {
+                    "title": "High Transaction Velocity",
+                    "value": str(expense_count),
+                    "color": "amber",
+                    "desc": "You made a high volume of individual purchases. Frequent, small transactions can easily drain a budget unnoticed.",
+                }
+            )
+        else:
+            insights.append(
+                {
+                    "title": "Controlled Purchasing",
+                    "value": str(expense_count),
+                    "color": "teal",
+                    "desc": "You maintain a low frequency of transactions, which strongly indicates deliberate and planned spending habits.",
+                }
+            )
 
     return {
         "summary": {
