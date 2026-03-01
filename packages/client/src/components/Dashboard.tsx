@@ -36,6 +36,9 @@ import { ChatPanel } from "./ChatPanel";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
+//CHANING LOGO: Import the actual file from assets folder!
+import algoFinanceLogo from "../assets/algo.jpg";
+
 // Mock data
 const mockTransactions = [
   {
@@ -280,9 +283,19 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               className="flex items-center gap-2 cursor-pointer"
               onClick={() => onNavigate("home")}
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg"></div>
+              {/* Logo Icon Container */}
+          {/* ADDING LOGO: Added overflow-hidden to maintain rounded corner mask */}
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white p-0.5 shadow-inner">
+            <img 
+              src={algoFinanceLogo} // The imported variable from Step 1
+              alt="AlgoFinance Logo"
+              // THE FIX (Step 3): 'object-contain' forces logo to fit perfectly within the 32px box without cropping or stretching
+              className="max-w-full max-h-full object-contain" 
+            />
+          </div>
               <span className="text-xl">AlgoFinance</span>
             </div>
+            
             {/* Button handling export report for the user */}
             <Button onClick={handleExportPDF} className="gap-2"> {/* handleExportPDF function added in onClick */}
               <Download className="w-4 h-4" />
