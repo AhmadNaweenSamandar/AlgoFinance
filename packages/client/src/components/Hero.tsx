@@ -1,6 +1,6 @@
 import { Button } from "./ui/button";
 import { Upload, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 //interface for second part of the main page
@@ -8,6 +8,49 @@ import { toast } from "sonner";
 interface HeroProps {
   onNavigate?: (page: string, data?: unknown) => void;
 }
+
+// The custom animated loader component
+const TypewriterLoader = ({ fileName }: { fileName: string }) => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [displayText, setDisplayText] = useState("");
+
+  useEffect(() => {
+    const steps = [
+      `Extracting data from ${fileName}...`,
+      "Normalizing financial data...",
+      "Predicting categories...",
+      "Generating dashboard..."
+    ];
+
+    if (currentStep >= steps.length) return;
+
+    const fullText = steps[currentStep];
+    let currentCharIndex = 0;
+
+    // 1. The Typing Effect (types one letter every 30ms)
+    const typingInterval = setInterval(() => {
+      setDisplayText(fullText.substring(0, currentCharIndex + 1));
+      currentCharIndex++;
+
+      // 2. When the sentence finishes typing
+      if (currentCharIndex === fullText.length) {
+        clearInterval(typingInterval);
+        
+        // 3. Wait exactly 0.3 seconds (300ms), then clear and start the next step
+        setTimeout(() => {
+          if (currentStep < steps.length - 1) {
+            setDisplayText(""); // Erase text
+            setCurrentStep((prev) => prev + 1); // Move to next step
+          }
+        }, 200); 
+      }
+    }, 15); // Typing speed: 30ms per character
+
+    return () => clearInterval(typingInterval);
+  }, [currentStep, fileName]);
+
+  return <span className="font-medium">{displayText}</span>;
+};
 
 export function Hero({ onNavigate }: HeroProps = {}) {
   // =========================================
@@ -42,9 +85,11 @@ export function Hero({ onNavigate }: HeroProps = {}) {
 
     if (!file) return; //if no file, stop here.
 
-    //1. START THE LOADING UX
+    // 1. START THE LOADING UX
     setIsUploading(true);
-    toast.loading(`Analyzing ${file.name}... Please wait.`); // using react-hot-toast
+    
+    // 2. Trigger the typewriter component inside the toast and save the ID!
+    const toastId = toast.loading(<TypewriterLoader fileName={file.name} />);
 
     try {
       //2. PACKAGE THE FILE (as like a Digital Envelope)
