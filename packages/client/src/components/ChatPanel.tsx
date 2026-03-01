@@ -218,7 +218,8 @@ export function ChatPanel({}: ChatPanelProps) {
                 }`}>
                   {message.role === "assistant" ? (
                     // THE ASSISTANT TEXT SIZE: Used `prose-base` (standard size) instead `prose-sm` (small size)
-                    <div className="prose prose-base max-w-none prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-900">
+                    // THE FIX: Aggressively target the paragraphs and lists to force text-sm
+                    <div className="prose prose-sm max-w-none text-sm prose-p:text-sm prose-li:text-sm prose-p:leading-relaxed prose-pre:bg-gray-100 prose-pre:text-gray-800">
                       {/* THE TYPEWRITER LOGIC: Only animate the message if the flag is true! */}
                       {message.animate ? (
                         <TypewriterMarkdown
@@ -234,7 +235,7 @@ export function ChatPanel({}: ChatPanelProps) {
                     </div>
                   ) : (
                     //THE USER SIZE: Used `text-base` (standard size) intead of `text-sm` (small size) to match the assistant!
-                    <p className="text-base whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                   )}
                 </div>
               </div>
