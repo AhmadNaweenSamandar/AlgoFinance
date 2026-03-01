@@ -295,12 +295,17 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
           </div>
               <span className="text-xl">AlgoFinance</span>
             </div>
-            
+            <div className="flex gap-1">
             {/* Button handling export report for the user */}
-            <Button onClick={handleExportPDF} className="gap-2"> {/* handleExportPDF function added in onClick */}
+            <Button  onClick={() => onNavigate("home")} className="gap-2 flex-1"> {/* redirect to home */}
+              <span className="hidden sm:inline">End Session</span>
+            </Button>
+            {/* Button handling export report for the user */}
+            <Button onClick={handleExportPDF} className="gap-2 flex-1"> {/* handleExportPDF function added in onClick */}
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export Report</span>
             </Button>
+            </div>
           </div>
         </div>
       </div>
