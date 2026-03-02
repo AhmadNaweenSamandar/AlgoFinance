@@ -11,8 +11,8 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
-import ReactMarkdown from 'react-markdown';
-import { useRef, useEffect } from 'react';
+import ReactMarkdown from "react-markdown";
+import { useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 //interface for chat panel component
@@ -50,12 +50,12 @@ const sampleQuestions = [
 // THE TYPEWRITER COMPONENT
 // This takes a string of markdown and slowly reveals it character by character
 // Pass the scrollRef into the component's props
-const TypewriterMarkdown = ({ 
-  content, 
+const TypewriterMarkdown = ({
+  content,
   scrollRef,
-  onComplete //Fix: text regeneration
-}: { 
-  content: string; 
+  onComplete, //Fix: text regeneration
+}: {
+  content: string;
   scrollRef: React.RefObject<HTMLDivElement>;
   onComplete: () => void;
 }) => {
@@ -63,13 +63,13 @@ const TypewriterMarkdown = ({
 
   useEffect(() => {
     let index = 0;
-    setDisplayedContent(""); 
-    const safeContent = content || ""; 
-    
+    setDisplayedContent("");
+    const safeContent = content || "";
+
     const timer = setInterval(() => {
       setDisplayedContent(safeContent.slice(0, index));
       index += 2; // typing 2 chars at a time makes it look a bit smoother!
-      
+
       // THE SCROLL FIX: Pull the screen down on every tick!
       // We use "auto" instead of "smooth" to prevent violent stuttering every 15ms
       if (scrollRef && scrollRef.current) {
@@ -80,7 +80,7 @@ const TypewriterMarkdown = ({
         clearInterval(timer);
         onComplete(); // THE FIX: Tell the parent component we are done typing!
       }
-    }, 15); 
+    }, 15);
 
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,12 +142,16 @@ export function ChatPanel({}: ChatPanelProps) {
 
     try {
       // 2. Send JUST this new message to your backend API
-      const response = await fetch("http://localhost:8000/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // We package the text into a tiny JSON envelope to send it over
-        body: JSON.stringify({ question: userMessage.content }),
-      });
+      const response = await fetch(
+        "https://algofinance-api-218961179547.northamerica-northeast1.run.app/api/chat",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          
+          // We package the text into a tiny JSON envelope to send it over
+          body: JSON.stringify({ question: userMessage.content }),
+        },
+      );
 
       const data = await response.json();
 
@@ -174,8 +178,8 @@ export function ChatPanel({}: ChatPanelProps) {
   const handleAnimationComplete = (messageId: number) => {
     setMessages((prevMessages) =>
       prevMessages.map((msg) =>
-        msg.id === messageId ? { ...msg, animate: false } : msg
-      )
+        msg.id === messageId ? { ...msg, animate: false } : msg,
+      ),
     );
   };
 
@@ -194,7 +198,9 @@ export function ChatPanel({}: ChatPanelProps) {
           </div>
           <div>
             <CardTitle>Gabina</CardTitle>
-            <CardDescription>Ask me anything about your finances</CardDescription>
+            <CardDescription>
+              Ask me anything about your finances
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -203,19 +209,28 @@ export function ChatPanel({}: ChatPanelProps) {
       <CardContent className="flex-1 flex flex-col p-0 overflow-hidden bg-gray-50/50">
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
           <div className="space-y-6">
-            
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex gap-3 w-full ${message.role === "user" ? "flex-row-reverse" : ""}`}
               >
-                <Avatar className={`w-8 h-8 flex-shrink-0 shadow-sm flex items-center justify-center ${message.role === "assistant" ? "bg-emerald-100" : "bg-white border"}`}>
-                  {message.role === "assistant" ? <Bot className="w-4 h-4 text-emerald-600" /> : <User className="w-4 h-4 text-gray-900" />}
+                <Avatar
+                  className={`w-8 h-8 flex-shrink-0 shadow-sm flex items-center justify-center ${message.role === "assistant" ? "bg-emerald-100" : "bg-white border"}`}
+                >
+                  {message.role === "assistant" ? (
+                    <Bot className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <User className="w-4 h-4 text-gray-900" />
+                  )}
                 </Avatar>
 
-                <div className={`rounded-2xl p-4 max-w-[85%] break-words shadow-sm ${
-                    message.role === "user" ? "bg-emerald-600 text-white rounded-tr-sm" : "bg-white border text-gray-900 rounded-tl-sm"
-                }`}>
+                <div
+                  className={`rounded-2xl p-4 max-w-[85%] break-words shadow-sm ${
+                    message.role === "user"
+                      ? "bg-emerald-600 text-white rounded-tr-sm"
+                      : "bg-white border text-gray-900 rounded-tl-sm"
+                  }`}
+                >
                   {message.role === "assistant" ? (
                     // THE ASSISTANT TEXT SIZE: Used `prose-base` (standard size) instead `prose-sm` (small size)
                     // THE FIX: Aggressively target the paragraphs and lists to force text-sm
@@ -223,37 +238,52 @@ export function ChatPanel({}: ChatPanelProps) {
                       {/* THE TYPEWRITER LOGIC: Only animate the message if the flag is true! */}
                       {message.animate ? (
                         <TypewriterMarkdown
-                        content={message.content}
-                        scrollRef={messagesEndRef} /* THE FIX: Hand the anchor to the typewriter */
-                        onComplete={() => handleAnimationComplete(message.id)} /* THE FIX: Pass the ID to the kill switch */
+                          content={message.content}
+                          scrollRef={
+                            messagesEndRef
+                          } /* THE FIX: Hand the anchor to the typewriter */
+                          onComplete={() =>
+                            handleAnimationComplete(message.id)
+                          } /* THE FIX: Pass the ID to the kill switch */
                         />
-                        
-                        
                       ) : (
                         <ReactMarkdown>{message.content}</ReactMarkdown>
                       )}
                     </div>
                   ) : (
                     //THE USER SIZE: Used `text-base` (standard size) intead of `text-sm` (small size) to match the assistant!
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap">
+                      {message.content}
+                    </p>
                   )}
                 </div>
               </div>
             ))}
 
             {isTyping && (
-               <div className="flex gap-3">
-                 <Avatar className="w-8 h-8 flex-shrink-0 bg-emerald-100 shadow-sm flex items-center justify-center"><Bot className="w-4 h-4 text-emerald-600" /></Avatar>
-                 <div className="bg-white border rounded-2xl rounded-tl-sm p-4 shadow-sm flex items-center h-[44px]">
-                   <div className="flex gap-1.5">
-                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
-                   </div>
-                 </div>
-               </div>
+              <div className="flex gap-3">
+                <Avatar className="w-8 h-8 flex-shrink-0 bg-emerald-100 shadow-sm flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-emerald-600" />
+                </Avatar>
+                <div className="bg-white border rounded-2xl rounded-tl-sm p-4 shadow-sm flex items-center h-[44px]">
+                  <div className="flex gap-1.5">
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
             )}
-            
+
             <div ref={messagesEndRef} className="h-1" />
           </div>
         </div>
@@ -292,55 +322,68 @@ export function ChatPanel({}: ChatPanelProps) {
       {/* THE DASHBOARD PREVIEW  */}
       <div className="relative h-[600px] lg:sticky lg:top-24 group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-xl">
         {renderChatInterface(false)}
-        <div 
+        <div
           className="absolute inset-0 z-10 bg-white/5 group-hover:bg-black/5 transition-colors rounded-xl flex items-center justify-center"
           onClick={() => setIsModalOpen(true)}
         >
-           <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-teal text-sm px-4 py-2 rounded-full shadow-lg font-medium">
-              
-           </div>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-teal text-sm px-4 py-2 rounded-full shadow-lg font-medium"></div>
         </div>
       </div>
 
       {/* THE FIX: STRICT INLINE STYLES FOR TELEPORTATION */}
-      {isModalOpen && typeof document !== 'undefined' && createPortal(
-        <div 
-          style={{ 
-            position: 'fixed', 
-            top: 0, left: 0, right: 0, bottom: 0, 
-            zIndex: 99999, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center' 
-          }}
-          className="p-4 sm:p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
-        >
-          
-          {/* Click outside to close */}
-          <div 
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
-            onClick={() => setIsModalOpen(false)} 
-          />
-
-          <div 
-            style={{ position: 'relative', width: '100%', maxWidth: '48rem', height: '85vh', zIndex: 100000 }}
-            className="animate-in zoom-in-95 duration-200"
+      {isModalOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 99999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            className="p-4 sm:p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
           >
-            {/* The Close Button */}
-            <button
+            {/* Click outside to close */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+              }}
               onClick={() => setIsModalOpen(false)}
-              className="absolute -top-12 right-0 md:-right-12 md:top-0 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            
-            {/* Render the FULL ACTIVE CHAT inside the modal! */}
-            {renderChatInterface(true)}
-          </div>
+            />
 
-        </div>,
-        document.body 
-      )}
+            <div
+              style={{
+                position: "relative",
+                width: "100%",
+                maxWidth: "48rem",
+                height: "85vh",
+                zIndex: 100000,
+              }}
+              className="animate-in zoom-in-95 duration-200"
+            >
+              {/* The Close Button */}
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="absolute -top-12 right-0 md:-right-12 md:top-0 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              {/* Render the FULL ACTIVE CHAT inside the modal! */}
+              {renderChatInterface(true)}
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

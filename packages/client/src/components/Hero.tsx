@@ -19,7 +19,7 @@ const TypewriterLoader = ({ fileName }: { fileName: string }) => {
       `Extracting data from ${fileName}...`,
       "Normalizing financial data...",
       "Predicting categories...",
-      "Generating dashboard..."
+      "Generating dashboard...",
     ];
 
     if (currentStep >= steps.length) return;
@@ -35,14 +35,14 @@ const TypewriterLoader = ({ fileName }: { fileName: string }) => {
       // 2. When the sentence finishes typing
       if (currentCharIndex === fullText.length) {
         clearInterval(typingInterval);
-        
+
         // 3. Wait exactly 0.3 seconds (300ms), then clear and start the next step
         setTimeout(() => {
           if (currentStep < steps.length - 1) {
             setDisplayText(""); // Erase text
             setCurrentStep((prev) => prev + 1); // Move to next step
           }
-        }, 280); 
+        }, 280);
       }
     }, 20); // Typing speed: 30ms per character
 
@@ -87,7 +87,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
 
     // 1. START THE LOADING UX
     setIsUploading(true);
-    
+
     // 2. Trigger the typewriter component inside the toast and save the ID!
     const toastId = toast.loading(<TypewriterLoader fileName={file.name} />);
 
@@ -101,7 +101,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
       // 3. SEND TO BACKEND (The Waiter)
       // Replace with your actual backend URL if different (/uploaid-statement is the FastAPI endpoint we created)
       const response = await fetch(
-        "http://localhost:8000/api/upload-statement",
+        "https://algofinance-api-218961179547.northamerica-northeast1.run.app/api/upload-statement",
         {
           method: "POST",
           body: formData, // Notice we don't set 'Content-Type' headers for FormData, the browser does it automatically!
@@ -183,9 +183,9 @@ export function Hero({ onNavigate }: HeroProps = {}) {
         </h1>
         {/* Subheadline */}
         <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Upload your monthly bank statement and let our machine learning algorithms
-          automatically categorize spending, create overview charts, and provide
-          smart insights with Artifical Inteligence.
+          Upload your monthly bank statement and let our machine learning
+          algorithms automatically categorize spending, create overview charts,
+          and provide smart insights with Artifical Inteligence.
         </p>
 
         {/* === CTA BUTTONS === */}
