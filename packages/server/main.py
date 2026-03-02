@@ -15,9 +15,8 @@ app = FastAPI(title="AlgoFinance API")
 origins = [
     "http://localhost:5173",  # frontend local development URL
     "http://127.0.0.1:5173",
-    "https://algofinance-frontend.web.app/", #Firebase frontend link
-    "https://algofinance-frontend.firebaseapp.com/" #Firebase frontend backup link
-
+    "https://algofinance-frontend.web.app",  # Firebase frontend link
+    "https://algofinance-frontend.firebaseapp.com",  # Firebase frontend backup link
 ]
 
 app.add_middleware(

@@ -147,6 +147,7 @@ export function ChatPanel({}: ChatPanelProps) {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          
           // We package the text into a tiny JSON envelope to send it over
           body: JSON.stringify({ question: userMessage.content }),
         },
