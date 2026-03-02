@@ -114,6 +114,10 @@ export function Hero({ onNavigate }: HeroProps = {}) {
 
       // 4. RECEIVE THE MEAL
       const dashboardData = await response.json();
+
+      // Save it to the browser's session memory as a string!
+      sessionStorage.setItem("financialData", JSON.stringify(dashboardData));
+
       console.log("Success from Backend:", dashboardData);
 
       toast.dismiss(); // Clear the loading toast
