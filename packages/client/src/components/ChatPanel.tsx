@@ -154,19 +154,16 @@ export function ChatPanel({}: ChatPanelProps) {
 
     try {
       // 2. Send JUST this new message to backend API
-      const response = await fetch(
-        "https://algofinance-api-218961179547.northamerica-northeast1.run.app/api/chat",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+      const response = await fetch("http://127.0.0.1:8000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
 
-          // We package the text into a tiny JSON envelope to send it over
-          body: JSON.stringify({
-            question: userMessage.content, //question is the user's message, financial_context is the uploaded data from the user
-            financial_context: financialContext,
-          }), //both should be indentical with the backend chat function's expected input!
-        },
-      );
+        // We package the text into a tiny JSON envelope to send it over
+        body: JSON.stringify({
+          question: userMessage.content, //question is the user's message, financial_context is the uploaded data from the user
+          financial_context: financialContext,
+        }), //both should be indentical with the backend chat function's expected input!
+      });
 
       const data = await response.json();
 

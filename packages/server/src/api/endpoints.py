@@ -8,7 +8,6 @@ from src.services.pdf_parser import extract_data_from_file
 from src.services.analytics import generate_dashboard_data
 from src.services.normalizer import normalize_financial_data
 from src.services.ml_model import predict_categories
-from src.services.chat_services import process_data_for_chat
 from src.services.chat_services import ask_financial_question
 
 
