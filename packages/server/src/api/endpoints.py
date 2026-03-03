@@ -15,6 +15,7 @@ from src.services.chat_services import ask_financial_question
 # Schema for the question
 class ChatRequest(BaseModel):
     question: str
+    financial_context: list  # React sends the sessionStorage data here
 
 
 def recursive_clean(obj):
@@ -97,7 +98,7 @@ async def chat_with_finance(request: ChatRequest):
     Endpoint for the Chat Interface.
     """
     try:  # <--- Indentation fixed here
-        answer = ask_financial_question(request.question)
+        answer = ask_financial_question(request.question, request.financial_context)
         return {"answer": answer}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
