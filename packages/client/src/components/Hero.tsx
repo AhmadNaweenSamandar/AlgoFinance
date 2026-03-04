@@ -197,41 +197,67 @@ export function Hero({ onNavigate }: HeroProps = {}) {
     <div className="relative min-h-screen">
       {/* === WELCOME POPUP OVERLAY === */}
       {showWelcomePopup && (
-        // The Background: fixed to screen, z-[999] forces it to the very front, backdrop-blur blurs the site
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-gray-900/60 backdrop-blur-md p-4 transition-all animate-in fade-in duration-300">
-          {/* The Small Square: max-w-sm makes it much smaller and tighter */}
-          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 text-center animate-in zoom-in-95 duration-300">
-            {/* Close Button (Fixed tightly to top-right of the white square) */}
-            <button
-              onClick={() => setShowWelcomePopup(false)}
-              className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all"
-            >
-              <X className="w-5 h-5" />
-            </button>
+        <>
+          {/* 1. The Background Overlay (Forced via inline styles) */}
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(17, 24, 39, 0.6)",
+              backdropFilter: "blur(8px)",
+              zIndex: 9998,
+            }}
+          />
 
-            {/* Content Text */}
-            <h3 className="text-xl font-bold text-gray-900 mt-2 mb-3">
-              Test AlgoFinance!
-            </h3>
+          {/* 2. The Pop-up Box (Mathematically centered via inline styles) */}
+          <div
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 9999,
+              width: "90%",
+              maxWidth: "24rem", // 384px (equivalent to max-w-sm)
+            }}
+            className="bg-white rounded-2xl shadow-2xl p-6 flex flex-col animate-in zoom-in-95 duration-300"
+          >
+            {/* Header (Title & X Button) */}
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-xl font-bold text-gray-900 mt-1">
+                Test AlgoFinance!
+              </h3>
+              <button
+                onClick={() => setShowWelcomePopup(false)}
+                className="text-gray-400 hover:text-red-500 hover:bg-gray-100 p-2 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <p className="text-sm text-gray-600 mb-8 leading-relaxed">
+            {/* Text Content */}
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
               Curious how the AI works but don't have a statement handy?
               Download our safe, sample bank statement to instantly test the
               dashboard.
             </p>
 
-            {/* Download Button (Centered at the bottom, stretches full width of the small square) */}
+            {/* Download Button */}
             <a
               href="/sample-statement.pdf"
               download="AlgoFinance_Sample_Statement.pdf"
               onClick={() => setShowWelcomePopup(false)}
-              className="flex items-center justify-center gap-2 w-full bg-black text-white px-5 py-3.5 rounded-xl font-medium hover:bg-gray-800 transition-colors shadow-md hover:shadow-lg"
+              style={{ backgroundColor: "#111827", color: "white" }}
+              className="flex items-center justify-center gap-2 w-full py-3.5 px-4 rounded-xl font-semibold hover:bg-black transition-colors shadow-md"
             >
-              <Download className="w-4 h-4" />
-              Download Sample
+              <Download className="w-5 h-5 text-white" />
+              <span>Download Sample</span>
             </a>
           </div>
-        </div>
+        </>
       )}
 
       {/* === ORIGINAL LANDING PAGE CONTENT === */}
