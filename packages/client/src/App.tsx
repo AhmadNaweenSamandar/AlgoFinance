@@ -7,6 +7,7 @@ import { AboutPage } from "./components/AboutPage";
 import { Dashboard } from "./components/Dashboard";
 import { Toaster } from "./components/ui/sonner";
 import { Header } from "./components/Header";
+import { WelcomePopup } from "./components/WelcomePopup";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -46,6 +47,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white">
+      <WelcomePopup />
       {showHeaderFooter && <Header onNavigate={handleNavigate} />}
       {renderPage()}
       {showHeaderFooter && <Footer onNavigate={handleNavigate} />}
