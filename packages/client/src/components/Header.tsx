@@ -1,7 +1,8 @@
-import { Menu } from "lucide-react";
+import { Download, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 //THE FIX (Step 1): Import the actual file from assets folder!
 import algoFinanceLogo from "../assets/algo.jpg";
+import { Button } from "./ui/button";
 
 //header interface created
 //contains two variables handling whether user navigate adertising pages
@@ -132,6 +133,24 @@ export function Header({ onNavigate }: HeaderProps) {
             >
               About
             </button>
+
+            {/* THE NEW DESKTOP BUTTON */}
+            {showSampleBtn && (
+              <a
+                href="/sample-statement.pdf"
+                download="AlgoFinance_Sample_Statement.pdf"
+                className="animate-in fade-in duration-500"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 rounded-md"
+                >
+                  <Download className="w-4 h-4" />
+                  Sample Statement
+                </Button>
+              </a>
+            )}
           </nav>
         </div>
       )}
