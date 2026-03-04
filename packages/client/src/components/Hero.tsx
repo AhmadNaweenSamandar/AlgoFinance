@@ -1,5 +1,5 @@
 import { Button } from "./ui/button";
-import { Upload, Sparkles } from "lucide-react";
+import { Upload, Sparkles, Download, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -61,6 +61,14 @@ export function Hero({ onNavigate }: HeroProps = {}) {
   const [isDragging, setIsDragging] = useState(false);
   //NEW: State to track when the backend is crunching the numbers
   const [isUploading, setIsUploading] = useState(false);
+  //states to control the welcome pop
+  const [isOpen, setIsOpen] = useState(true);
+
+  //new popup state to show welcome message only on first visit
+  const [showWelcomePopup, setShowWelcomePopup] = useState(true);
+
+  // If the popup is closed, render nothing
+  if (!isOpen) return null;
 
   // =========================================
   // HANDLERS: FILE UPLOAD (DRAG & DROP)
@@ -174,94 +182,126 @@ export function Hero({ onNavigate }: HeroProps = {}) {
   };
 
   return (
-    <section className="container mx-auto px-4 py-16 md:py-24">
-      <div className="max-w-4xl mx-auto text-center">
-        {/* === PILL BADGE === */}
-        {/* Small highlight element above the main headline */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full mb-6">
-          <Sparkles className="w-4 h-4" />
-          <span className="text-sm">ML-Powered Financial Intelligence</span>
-        </div>
-
-        {/* === MAIN HEADLINE === */}
-        <h1 className="mb-6">
-          Gabina, our smart chatbot help you
-          {/* Gradient Text Technique:
-              - bg-gradient-to-r: Sets the gradient colors.
-              - bg-clip-text: Clips the background to the shape of the text.
-              - text-transparent: Makes the text fill invisible so the background shows through.
-          */}
-          <span className="block bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-            Understand your Finances!
-          </span>
-        </h1>
-        {/* Subheadline */}
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Upload your monthly bank statement and let our machine learning
-          algorithms automatically categorize spending, create overview charts,
-          and provide smart insights with Artifical Inteligence.
-        </p>
-
-        {/* === CTA BUTTONS === */}
-        {/* flex-col sm:flex-row: Vertical stack on mobile, horizontal on desktop */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-          <Button size="lg" className="gap-2" onClick={handleGetStarted}>
-            <Upload className="w-5 h-5" />
-            Start Now
-          </Button>
-        </div>
-
-        {/* === INTERACTIVE DEMO AREA (Drop Zone) === */}
-        <div id="file-upload-section" className="relative mt-12">
-          {/* Background Glow Effect:
-              - absolute inset-0: Fills the container.
-              - blur-3xl: Heavily blurs the gradient to create a soft glow.
-              - -z-10: Pushes it behind the content.
-          */}
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 blur-3xl -z-10"></div>
-          {/* The Upload Card */}
-          <div className="bg-white rounded-lg border-2 border-gray-200 shadow-2xl p-8 md:p-12">
-            {/* The Drop Target 
-                - Using a <label> allows clicking anywhere in the box to trigger the hidden file input.
-            */}
-            <label
-              htmlFor="file-upload"
-              // Drag Events to handle state toggling
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleFileUpload}
-              // Conditional Styling:
-              // If dragging file over, turn Green (Emerald).
-              // If idle, stay Gray/White with hover effects.
-              className={`block border-2 border-dashed rounded-lg p-12 transition-all cursor-pointer ${
-                isDragging
-                  ? "border-emerald-400 bg-emerald-50"
-                  : "border-gray-300 bg-gray-50 hover:border-emerald-400 hover:bg-emerald-50/50"
-              }`}
+    <>
+      {/* === WELCOME POPUP OVERLAY === */}
+      {showWelcomePopup && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+          {/* exact styling wrapper */}
+          <div className="bg-white rounded-lg border-2 border-gray-200 shadow-2xl p-8 md:p-12 relative max-w-lg w-full text-center animate-in fade-in zoom-in-95 duration-200">
+            {/* Close Button (Top Right) */}
+            <button
+              onClick={() => setShowWelcomePopup(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition-colors"
             >
-              {/* Hidden Input: The actual form element doing the work */}
-              <input
-                id="file-upload"
-                type="file"
-                accept=".csv,.xlsx,.xls,.pdf,.ofx,.qfx" // Restrict to financial formats
-                onChange={handleFileUpload}
-                className="hidden"
-              />
+              <X className="w-6 h-6" />
+            </button>
 
-              {/* Visual Feedback Icons & Text */}
-              <Upload
-                className={`w-12 h-12 mx-auto mb-4 ${isDragging ? "text-emerald-600" : "text-gray-400"}`}
-              />
-              <p className={isDragging ? "text-emerald-600" : "text-gray-600"}>
-                Drop your bank statement here or click to browse
-              </p>
-              <p className="text-sm text-gray-400 mt-2">
-                Supports Excel, and PDF files from all major banks
-              </p>
-            </label>
+            {/* Matching Emerald Pill Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full mb-6">
+              <Sparkles className="w-4 h-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                Try it out
+              </span>
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Test the AI Without Your Own Data
+            </h2>
+
+            <p className="text-gray-600 mb-10 leading-relaxed">
+              Curious how Gabina analyzes spending? Download our secure, sample
+              bank statement to instantly test the dashboard and machine
+              learning algorithms.
+            </p>
+
+            {/* Black Download Button (Centered) */}
+            <div className="flex justify-center">
+              <a
+                href="/sample-statement.pdf"
+                download="AlgoFinance_Sample_Statement.pdf"
+                onClick={() => setShowWelcomePopup(false)}
+                className="inline-flex items-center gap-2 bg-gray-900 text-white px-8 py-4 rounded-lg font-medium hover:bg-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              >
+                <Download className="w-5 h-5" />
+                Download Sample Statement
+              </a>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      )}
+
+      {/* === ORIGINAL LANDING PAGE === */}
+      <section className="container mx-auto px-4 py-16 md:py-24">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* === PILL BADGE === */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full mb-6">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-sm">ML-Powered Financial Intelligence</span>
+          </div>
+
+          {/* === MAIN HEADLINE === */}
+          <h1 className="mb-6 text-4xl font-bold">
+            Gabina, our smart chatbot help you
+            <span className="block bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              Understand your Finances!
+            </span>
+          </h1>
+
+          {/* Subheadline */}
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Upload your monthly bank statement and let our machine learning
+            algorithms automatically categorize spending, create overview
+            charts, and provide smart insights with Artificial Intelligence.
+          </p>
+
+          {/* === CTA BUTTONS === */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Button size="lg" className="gap-2" onClick={handleGetStarted}>
+              <Upload className="w-5 h-5" />
+              Start Now
+            </Button>
+          </div>
+
+          {/* === INTERACTIVE DEMO AREA (Drop Zone) === */}
+          <div id="file-upload-section" className="relative mt-12">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 blur-3xl -z-10"></div>
+
+            <div className="bg-white rounded-lg border-2 border-gray-200 shadow-2xl p-8 md:p-12">
+              <label
+                htmlFor="file-upload"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleFileUpload}
+                className={`block border-2 border-dashed rounded-lg p-12 transition-all cursor-pointer ${
+                  isDragging
+                    ? "border-emerald-400 bg-emerald-50"
+                    : "border-gray-300 bg-gray-50 hover:border-emerald-400 hover:bg-emerald-50/50"
+                }`}
+              >
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept=".csv,.xlsx,.xls,.pdf,.ofx,.qfx"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+
+                <Upload
+                  className={`w-12 h-12 mx-auto mb-4 ${isDragging ? "text-emerald-600" : "text-gray-400"}`}
+                />
+                <p
+                  className={isDragging ? "text-emerald-600" : "text-gray-600"}
+                >
+                  Drop your bank statement here or click to browse
+                </p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Supports Excel, and PDF files from all major banks
+                </p>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
