@@ -1,5 +1,5 @@
 import { Menu } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 //THE FIX (Step 1): Import the actual file from assets folder!
 import algoFinanceLogo from "../assets/algo.jpg";
 
@@ -34,6 +34,28 @@ export function Header({ onNavigate }: HeaderProps) {
     setMobileMenuOpen(false);
   };
 
+  // =========================================
+  // State to receive signal from Hero that pop up is closed
+  // and to show the "Download Sample Statement" button in the header
+  // =========================================
+  // 1. State to control the button visibility
+  const [showSampleBtn, setShowSampleBtn] = useState(false);
+
+  // 2. Listen for the signal or check memory on load
+  useEffect(() => {
+    // If they refresh the page after already closing the popup, show it immediately
+    if (localStorage.getItem("hasSeenPopup")) {
+      setShowSampleBtn(true);
+    }
+
+    // Listen for the exact moment the Landing Page fires the "popupClosed" signal
+    const handleSignal = () => setShowSampleBtn(true);
+    window.addEventListener("popupClosed", handleSignal);
+
+    // Cleanup the listener
+    return () => window.removeEventListener("popupClosed", handleSignal);
+  }, []);
+
   return (
     //to be coded
 
@@ -57,11 +79,11 @@ export function Header({ onNavigate }: HeaderProps) {
           {/* Logo Icon Container */}
           {/* THE FIX (Step 2): Added overflow-hidden to maintain rounded corner mask */}
           <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white p-0.5 shadow-inner">
-            <img 
+            <img
               src={algoFinanceLogo} // The imported variable from Step 1
               alt="AlgoFinance Logo"
               // THE FIX (Step 3): 'object-contain' forces logo to fit perfectly within the 32px box without cropping or stretching
-              className="max-w-full max-h-full object-contain" 
+              className="max-w-full max-h-full object-contain"
             />
           </div>
 
