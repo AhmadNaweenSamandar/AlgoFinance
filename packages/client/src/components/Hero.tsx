@@ -68,18 +68,26 @@ export function Hero({ onNavigate }: HeroProps = {}) {
   //initialized to false to implement delay
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
 
-  // 2. The 5-Second Timer
+  //useEffect updated to check if they've already closed it in the past
+  //it will help to prevent pop up for the same session if user refresh the page after closing the pop up
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowWelcomePopup(true);
-    }, 5000); // 5000 milliseconds = 5 seconds
+    const hasSeenPopup = localStorage.getItem("hasSeenPopup");
 
-    // Cleanup the timer if the user leaves the page early
-    return () => clearTimeout(timer);
+    // Only start the 5-second timer if they haven't seen it before!
+    if (!hasSeenPopup) {
+      const timer = setTimeout(() => {
+        setShowWelcomePopup(true);
+      }, 10000); //wait time updated to 10 seconds to give users more time to explore the landing page before the popup appears
+      return () => clearTimeout(timer);
+    }
   }, []);
 
-  // If the popup is closed, render nothing
-  if (!isOpen) return null;
+  // this useEffect help to track if the pop up is closed so that the download button appears in navbar afterwards
+  const handleClosePopup = () => {
+    setShowWelcomePopup(false); // Close the UI
+    localStorage.setItem("hasSeenPopup", "true"); // Remember this forever
+    window.dispatchEvent(new Event("popupClosed")); // Send a signal to the Navbar!
+  };
 
   // =========================================
   // HANDLERS: FILE UPLOAD (DRAG & DROP)
@@ -251,7 +259,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
               <a
                 href="/sample-statement.pdf"
                 download="AlgoFinance_Sample_Statement.pdf"
-                onClick={() => setShowWelcomePopup(false)}
+                onClick={handleClosePopup}
                 className="w-full" // Ensures the link wrapper takes up the right space
               >
                 <Button size="lg" className="gap-2 w-full rounded-md shadow-md">
