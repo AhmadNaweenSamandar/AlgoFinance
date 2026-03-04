@@ -65,7 +65,18 @@ export function Hero({ onNavigate }: HeroProps = {}) {
   const [isOpen, setIsOpen] = useState(true);
 
   //new popup state to show welcome message only on first visit
-  const [showWelcomePopup, setShowWelcomePopup] = useState(true);
+  //initialized to false to implement delay
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+
+  // 2. The 5-Second Timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowWelcomePopup(true);
+    }, 5000); // 5000 milliseconds = 5 seconds
+
+    // Cleanup the timer if the user leaves the page early
+    return () => clearTimeout(timer);
+  }, []);
 
   // If the popup is closed, render nothing
   if (!isOpen) return null;
@@ -182,64 +193,56 @@ export function Hero({ onNavigate }: HeroProps = {}) {
   };
 
   return (
-    <>
+    // Wrap everything in a relative min-h-screen to ensure proper stacking
+    <div className="relative min-h-screen">
       {/* === WELCOME POPUP OVERLAY === */}
       {showWelcomePopup && (
-        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
-          {/* exact styling wrapper */}
-          <div className="bg-white rounded-lg border-2 border-gray-200 shadow-2xl p-8 md:p-12 relative max-w-lg w-full text-center animate-in fade-in zoom-in-95 duration-200">
-            {/* Close Button (Top Right) */}
+        // The Background: fixed to screen, z-[999] forces it to the very front, backdrop-blur blurs the site
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-gray-900/60 backdrop-blur-md p-4 transition-all animate-in fade-in duration-300">
+          {/* The Small Square: max-w-sm makes it much smaller and tighter */}
+          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-8 text-center animate-in zoom-in-95 duration-300">
+            {/* Close Button (Fixed tightly to top-right of the white square) */}
             <button
               onClick={() => setShowWelcomePopup(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition-colors"
+              className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-all"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
 
-            {/* Matching Emerald Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full mb-6">
-              <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">
-                Try it out
-              </span>
-            </div>
+            {/* Content Text */}
+            <h3 className="text-xl font-bold text-gray-900 mt-2 mb-3">
+              Test AlgoFinance!
+            </h3>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Test the AI Without Your Own Data
-            </h2>
-
-            <p className="text-gray-600 mb-10 leading-relaxed">
-              Curious how Gabina analyzes spending? Download our secure, sample
-              bank statement to instantly test the dashboard and machine
-              learning algorithms.
+            <p className="text-sm text-gray-600 mb-8 leading-relaxed">
+              Curious how the AI works but don't have a statement handy?
+              Download our safe, sample bank statement to instantly test the
+              dashboard.
             </p>
 
-            {/* Black Download Button (Centered) */}
-            <div className="flex justify-center">
-              <a
-                href="/sample-statement.pdf"
-                download="AlgoFinance_Sample_Statement.pdf"
-                onClick={() => setShowWelcomePopup(false)}
-                className="inline-flex items-center gap-2 bg-gray-900 text-white px-8 py-4 rounded-lg font-medium hover:bg-black transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-              >
-                <Download className="w-5 h-5" />
-                Download Sample Statement
-              </a>
-            </div>
+            {/* Download Button (Centered at the bottom, stretches full width of the small square) */}
+            <a
+              href="/sample-statement.pdf"
+              download="AlgoFinance_Sample_Statement.pdf"
+              onClick={() => setShowWelcomePopup(false)}
+              className="flex items-center justify-center gap-2 w-full bg-black text-white px-5 py-3.5 rounded-xl font-medium hover:bg-gray-800 transition-colors shadow-md hover:shadow-lg"
+            >
+              <Download className="w-4 h-4" />
+              Download Sample
+            </a>
           </div>
         </div>
       )}
 
-      {/* === ORIGINAL LANDING PAGE === */}
+      {/* === ORIGINAL LANDING PAGE CONTENT === */}
+      {/* We keep this exactly the same! */}
       <section className="container mx-auto px-4 py-16 md:py-24">
         <div className="max-w-4xl mx-auto text-center">
-          {/* === PILL BADGE === */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full mb-6">
             <Sparkles className="w-4 h-4" />
             <span className="text-sm">ML-Powered Financial Intelligence</span>
           </div>
 
-          {/* === MAIN HEADLINE === */}
           <h1 className="mb-6 text-4xl font-bold">
             Gabina, our smart chatbot help you
             <span className="block bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
@@ -247,14 +250,12 @@ export function Hero({ onNavigate }: HeroProps = {}) {
             </span>
           </h1>
 
-          {/* Subheadline */}
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Upload your monthly bank statement and let our machine learning
             algorithms automatically categorize spending, create overview
             charts, and provide smart insights with Artificial Intelligence.
           </p>
 
-          {/* === CTA BUTTONS === */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Button size="lg" className="gap-2" onClick={handleGetStarted}>
               <Upload className="w-5 h-5" />
@@ -262,7 +263,6 @@ export function Hero({ onNavigate }: HeroProps = {}) {
             </Button>
           </div>
 
-          {/* === INTERACTIVE DEMO AREA (Drop Zone) === */}
           <div id="file-upload-section" className="relative mt-12">
             <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 blur-3xl -z-10"></div>
 
@@ -302,6 +302,6 @@ export function Hero({ onNavigate }: HeroProps = {}) {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
