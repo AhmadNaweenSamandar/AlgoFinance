@@ -245,17 +245,20 @@ export function Hero({ onNavigate }: HeroProps = {}) {
               dashboard.
             </p>
 
-            {/* Download Button */}
-            <a
-              href="/sample-statement.pdf"
-              download="AlgoFinance_Sample_Statement.pdf"
-              onClick={() => setShowWelcomePopup(false)}
-              style={{ backgroundColor: "#111827", color: "white" }}
-              className="flex items-center justify-center gap-2 w-full py-3.5 px-4 rounded-xl font-semibold hover:bg-black transition-colors shadow-md"
-            >
-              <Download className="w-5 h-5 text-white" />
-              <span>Download Sample</span>
-            </a>
+            {/* Download Button Area */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+              <a
+                href="/sample-statement.pdf"
+                download="AlgoFinance_Sample_Statement.pdf"
+                onClick={() => setShowWelcomePopup(false)}
+                className="w-full" // Ensures the link wrapper takes up the right space
+              >
+                <Button size="lg" className="gap-2 w-full rounded-md shadow-md">
+                  <Download className="w-5 h-5" />
+                  Download Sample
+                </Button>
+              </a>
+            </div>
           </div>
         </>
       )}
