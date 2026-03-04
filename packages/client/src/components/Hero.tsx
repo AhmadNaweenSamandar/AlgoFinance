@@ -71,22 +71,19 @@ export function Hero({ onNavigate }: HeroProps = {}) {
   //useEffect updated to check if they've already closed it in the past
   //it will help to prevent pop up for the same session if user refresh the page after closing the pop up
   useEffect(() => {
-    const hasSeenPopup = localStorage.getItem("hasSeenPopup");
+    // Starts the 10-second timer immediately on every page load
+    const timer = setTimeout(() => {
+      setShowWelcomePopup(true);
+    }, 10000);
 
-    // Only start the 5-second timer if they haven't seen it before!
-    if (!hasSeenPopup) {
-      const timer = setTimeout(() => {
-        setShowWelcomePopup(true);
-      }, 10000); //wait time updated to 10 seconds to give users more time to explore the landing page before the popup appears
-      return () => clearTimeout(timer);
-    }
+    // Cleanup the timer if the user navigates away before 10 seconds
+    return () => clearTimeout(timer);
   }, []);
 
   // this useEffect help to track if the pop up is closed so that the download button appears in navbar afterwards
   const handleClosePopup = () => {
     console.log("1. Popup closed clicked!");
     setShowWelcomePopup(false); // Close the UI
-    localStorage.setItem("hasSeenPopup", "true"); // Remember this forever
     window.dispatchEvent(new Event("popupClosed")); // Send a signal to the Navbar!
     console.log("2. Signal sent to window!");
   };
