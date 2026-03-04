@@ -240,9 +240,10 @@ export function Hero({ onNavigate }: HeroProps = {}) {
 
             {/* Text Content */}
             <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-              Curious how the AI works but don't have a statement handy?
-              Download our safe, sample bank statement to instantly test the
-              dashboard.
+              Curious how the AlgoFinance works but don't have a statement
+              handy? Download our safe, sample bank statement to instantly test
+              the dashboard. You can download it from navbar at anytime after
+              closing this popup! Ahmad ❤️
             </p>
 
             {/* Download Button Area */}
