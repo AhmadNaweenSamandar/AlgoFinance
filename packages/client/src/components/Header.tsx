@@ -25,6 +25,35 @@ export function Header({ onNavigate }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // =========================================
+  // State to receive signal from Hero that pop up is closed
+  // and to show the "Download Sample Statement" button in the header
+  // =========================================
+  // 1. State to control the button visibility
+  const [showSampleBtn, setShowSampleBtn] = useState(false);
+
+  // 2. Listen for the signal or check memory on load
+  useEffect(() => {
+    console.log(
+      "Header loaded. Storage check:",
+      localStorage.getItem("hasSeenPopup"),
+    );
+    // If they refresh the page after already closing the popup, show it immediately
+    if (localStorage.getItem("hasSeenPopup")) {
+      setShowSampleBtn(true);
+    }
+
+    // Listen for the exact moment the Landing Page fires the "popupClosed" signal
+    const handleSignal = () => {
+      console.log("3. Signal received by Header!");
+      setShowSampleBtn(true);
+    };
+    window.addEventListener("popupClosed", handleSignal);
+
+    // Cleanup the listener
+    return () => window.removeEventListener("popupClosed", handleSignal);
+  }, []);
+
+  // =========================================
   // Handlers
   // =========================================
   /**
@@ -34,28 +63,6 @@ export function Header({ onNavigate }: HeaderProps) {
     onNavigate(page);
     setMobileMenuOpen(false);
   };
-
-  // =========================================
-  // State to receive signal from Hero that pop up is closed
-  // and to show the "Download Sample Statement" button in the header
-  // =========================================
-  // 1. State to control the button visibility
-  const [showSampleBtn, setShowSampleBtn] = useState(false);
-
-  // 2. Listen for the signal or check memory on load
-  useEffect(() => {
-    // If they refresh the page after already closing the popup, show it immediately
-    if (localStorage.getItem("hasSeenPopup")) {
-      setShowSampleBtn(true);
-    }
-
-    // Listen for the exact moment the Landing Page fires the "popupClosed" signal
-    const handleSignal = () => setShowSampleBtn(true);
-    window.addEventListener("popupClosed", handleSignal);
-
-    // Cleanup the listener
-    return () => window.removeEventListener("popupClosed", handleSignal);
-  }, []);
 
   return (
     //to be coded
@@ -98,6 +105,19 @@ export function Header({ onNavigate }: HeaderProps) {
                     - Desktop: Visible (display: flex) to show links horizontally. 
                 */}
         <nav className="hidden md:flex items-center gap-6">
+          {/* THE NEW DESKTOP BUTTON */}
+          {showSampleBtn && (
+            <a
+              href="/sample-statement.pdf"
+              download="AlgoFinance_Sample_Statement.pdf"
+              className="animate-in fade-in duration-500"
+            >
+              <Button variant="outline" size="sm" className="gap-2 rounded-md">
+                <Download className="w-4 h-4" />
+                Sample Statement
+              </Button>
+            </a>
+          )}
           <button
             onClick={() => handleNavClick("about")}
             className="text-gray-600 hover:text-gray-900 transition-colors"
@@ -126,15 +146,7 @@ export function Header({ onNavigate }: HeaderProps) {
                     - border-t: Adds visual separation from the main header bar.
                 */}
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
-            {/* Navigation Links (Vertical Stack) */}
-            <button
-              onClick={() => handleNavClick("about")}
-              className="text-gray-600 hover:text-gray-900 text-left"
-            >
-              About
-            </button>
-
-            {/* THE NEW DESKTOP BUTTON */}
+            {/* THE NEW MOBILE BUTTON */}
             {showSampleBtn && (
               <a
                 href="/sample-statement.pdf"
@@ -151,6 +163,13 @@ export function Header({ onNavigate }: HeaderProps) {
                 </Button>
               </a>
             )}
+            {/* Navigation Links (Vertical Stack) */}
+            <button
+              onClick={() => handleNavClick("about")}
+              className="text-gray-600 hover:text-gray-900 text-left"
+            >
+              About
+            </button>
           </nav>
         </div>
       )}

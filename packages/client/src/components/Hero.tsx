@@ -84,9 +84,11 @@ export function Hero({ onNavigate }: HeroProps = {}) {
 
   // this useEffect help to track if the pop up is closed so that the download button appears in navbar afterwards
   const handleClosePopup = () => {
+    console.log("1. Popup closed clicked!");
     setShowWelcomePopup(false); // Close the UI
     localStorage.setItem("hasSeenPopup", "true"); // Remember this forever
     window.dispatchEvent(new Event("popupClosed")); // Send a signal to the Navbar!
+    console.log("2. Signal sent to window!");
   };
 
   // =========================================
@@ -239,7 +241,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
                 Test AlgoFinance!
               </h3>
               <button
-                onClick={() => setShowWelcomePopup(false)}
+                onClick={handleClosePopup}
                 className="text-gray-400 hover:text-red-500 hover:bg-gray-100 p-2 rounded-full transition-colors"
               >
                 <X className="w-5 h-5" />
