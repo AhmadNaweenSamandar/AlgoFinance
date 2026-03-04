@@ -115,9 +115,18 @@ export function Hero({ onNavigate }: HeroProps = {}) {
 
       // 4. RECEIVE THE MEAL
       const dashboardData = await response.json();
+      console.log("Success from Backend:", dashboardData);
 
-      // Save it to the browser's session memory as a string!
-      sessionStorage.setItem("financialData", JSON.stringify(dashboardData));
+      // issue: the frontend was sending whole dashboardData to sessionStorage, which included not only the transactions array
+      // but also charts and insights, which caused 422 error (wrong type)
+      // THE FIX: we extract the transactions array from the dashboardData and save it to sessionStorage
+      const transactionsArray = dashboardData.transactions;
+
+      // Now we only save the pure transaction list to memory!
+      sessionStorage.setItem(
+        "financialData",
+        JSON.stringify(transactionsArray),
+      );
 
       console.log("Success from Backend:", dashboardData);
 
