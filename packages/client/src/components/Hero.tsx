@@ -256,8 +256,8 @@ export function Hero({ onNavigate }: HeroProps = {}) {
             {/* Download Button Area */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
               <a
-                href="/sample-statement.pdf"
-                download="AlgoFinance_Sample_Statement.pdf"
+                href="/SampleBankStatement.pdf"
+                download="SampleBankStatement.pdf"
                 onClick={handleClosePopup}
                 className="w-full" // Ensures the link wrapper takes up the right space
               >
