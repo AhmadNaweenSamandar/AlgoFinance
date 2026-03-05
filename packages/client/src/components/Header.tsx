@@ -108,8 +108,8 @@ export function Header({ onNavigate }: HeaderProps) {
           {/* THE NEW DESKTOP BUTTON */}
           {showSampleBtn && (
             <a
-              href="/sample-statement.pdf"
-              download="AlgoFinance_Sample_Statement.pdf"
+              href="/SampleBankStatement.pdf"
+              download="SampleBankStatement.pdf"
               className="animate-in fade-in duration-500"
             >
               <Button variant="outline" size="sm" className="gap-2 rounded-md">
@@ -149,8 +149,8 @@ export function Header({ onNavigate }: HeaderProps) {
             {/* THE NEW MOBILE BUTTON */}
             {showSampleBtn && (
               <a
-                href="/sample-statement.pdf"
-                download="AlgoFinance_Sample_Statement.pdf"
+                href="/SampleBankStatement.pdf"
+                download="SampleBankStatement.pdf"
                 className="animate-in fade-in duration-500"
               >
                 <Button
