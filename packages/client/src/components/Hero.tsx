@@ -128,7 +128,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
       // Replace with your actual backend URL if different (/uploaid-statement is the FastAPI endpoint we created)
       const response = await fetch(
         //https://algofinance-api-218961179547.northamerica-northeast1.run.app
-        "http://127.0.0.1:8000/api/upload-statement",
+        "https://algofinance-api-218961179547.northamerica-northeast1.run.app/api/upload-statement",
         {
           method: "POST",
           body: formData, // Notice we don't set 'Content-Type' headers for FormData, the browser does it automatically!
