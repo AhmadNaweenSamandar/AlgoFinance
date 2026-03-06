@@ -179,7 +179,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
     Benefits: "#0d9488",
     Bills: "#f1f50b",
     Loans: "#dc2626",
-    Transfer: "#6b7280",
+    Transfers: "#b8129c",
     Cash: "#a16200",
   };
 
@@ -218,21 +218,21 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
     doc.setFontSize(22);
     doc.setTextColor(16, 185, 129); // Tailwind Emerald-500
     doc.text("AlgoFinance", 14, 20);
-    
+
     doc.setFontSize(14);
     doc.setTextColor(50, 50, 50);
     doc.text("Personal Finance Report", 14, 30);
-    
+
     doc.setFontSize(10);
     doc.setTextColor(100, 100, 100);
     doc.text(`Generated on: ${today}`, 14, 36);
 
     // 3. Add the Category Spending Summary Table
     // We map your JSON array into a simple 2D array [["Food", "$400.00"], ...]
-    const categoryRows = financialData.overview.map(item => [
+    const categoryRows = financialData.overview.map((item) => [
       item.category,
       `$${item.amount.toFixed(2)}`,
-      `${item.percentage}%`
+      `${item.percentage}%`,
     ]);
 
     doc.setFontSize(12);
@@ -241,9 +241,9 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
 
     autoTable(doc, {
       startY: 55,
-      head: [['Category', 'Amount', 'Percentage']],
+      head: [["Category", "Amount", "Percentage"]],
       body: categoryRows,
-      theme: 'grid',
+      theme: "grid",
       headStyles: { fillColor: [16, 185, 129] }, // Emerald Green header
     });
 
@@ -251,25 +251,25 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
     // We use doc.lastAutoTable.finalY to know exactly where the last table ended!
     const finalY = (doc as any).lastAutoTable.finalY || 55;
 
-    const transactionRows = financialData.transactions.map(t => [
+    const transactionRows = financialData.transactions.map((t) => [
       t.date,
       t.description,
       t.category,
-      `$${t.amount.toFixed(2)}`
+      `$${t.amount.toFixed(2)}`,
     ]);
 
     doc.text("Transaction History", 14, finalY + 15);
 
     autoTable(doc, {
       startY: finalY + 20,
-      head: [['Date', 'Description', 'Category', 'Amount']],
+      head: [["Date", "Description", "Category", "Amount"]],
       body: transactionRows,
-      theme: 'striped',
+      theme: "striped",
       headStyles: { fillColor: [55, 65, 81] }, // Dark Gray header for contrast
     });
 
     // 5. Trigger the download!
-    doc.save(`AlgoFinance_Report_${today.replace(/\//g, '-')}.pdf`);
+    doc.save(`AlgoFinance_Report_${today.replace(/\//g, "-")}.pdf`);
   };
 
   return (
@@ -284,27 +284,34 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               onClick={() => onNavigate("home")}
             >
               {/* Logo Icon Container */}
-          {/* ADDING LOGO: Added overflow-hidden to maintain rounded corner mask */}
-          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white p-0.5 shadow-inner">
-            <img 
-              src={algoFinanceLogo} // The imported variable from Step 1
-              alt="AlgoFinance Logo"
-              // THE FIX (Step 3): 'object-contain' forces logo to fit perfectly within the 32px box without cropping or stretching
-              className="max-w-full max-h-full object-contain" 
-            />
-          </div>
+              {/* ADDING LOGO: Added overflow-hidden to maintain rounded corner mask */}
+              <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white p-0.5 shadow-inner">
+                <img
+                  src={algoFinanceLogo} // The imported variable from Step 1
+                  alt="AlgoFinance Logo"
+                  // THE FIX (Step 3): 'object-contain' forces logo to fit perfectly within the 32px box without cropping or stretching
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
               <span className="text-xl">AlgoFinance</span>
             </div>
             <div className="flex gap-1">
-            {/* Button handling export report for the user */}
-            <Button  onClick={() => onNavigate("home")} className="gap-2 flex-1"> {/* redirect to home */}
-              <span className="hidden sm:inline">End Session</span>
-            </Button>
-            {/* Button handling export report for the user */}
-            <Button onClick={handleExportPDF} className="gap-2 flex-1"> {/* handleExportPDF function added in onClick */}
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export Report</span>
-            </Button>
+              {/* Button handling export report for the user */}
+              <Button
+                onClick={() => onNavigate("home")}
+                className="gap-2 flex-1"
+              >
+                {" "}
+                {/* redirect to home */}
+                <span className="hidden sm:inline">End Session</span>
+              </Button>
+              {/* Button handling export report for the user */}
+              <Button onClick={handleExportPDF} className="gap-2 flex-1">
+                {" "}
+                {/* handleExportPDF function added in onClick */}
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Export Report</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -335,7 +342,6 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
               <div className="text-2xl mb-1">
                 ${financialData.summary.total_expenses.toLocaleString()}
               </div>
-
             </CardContent>
           </Card>
           {/* Net Saving */}
@@ -516,7 +522,7 @@ export function Dashboard({ onNavigate, financialData }: DashboardProps) {
                             {financialData.insights[2].title}
                           </h4>
                           <p className="text-sm text-purple-800">
-                            {financialData.insights[2].value} - {" "}
+                            {financialData.insights[2].value} -{" "}
                             {financialData.insights[2].desc}
                           </p>
                         </div>
