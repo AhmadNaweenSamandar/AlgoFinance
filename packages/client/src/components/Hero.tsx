@@ -1,5 +1,5 @@
 import { Button } from "./ui/button";
-import { Upload, Sparkles } from "lucide-react";
+import { Upload, Sparkles, Download, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -61,6 +61,32 @@ export function Hero({ onNavigate }: HeroProps = {}) {
   const [isDragging, setIsDragging] = useState(false);
   //NEW: State to track when the backend is crunching the numbers
   const [isUploading, setIsUploading] = useState(false);
+  //states to control the welcome pop
+  const [isOpen, setIsOpen] = useState(true);
+
+  //new popup state to show welcome message only on first visit
+  //initialized to false to implement delay
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+
+  //useEffect updated to check if they've already closed it in the past
+  //it will help to prevent pop up for the same session if user refresh the page after closing the pop up
+  useEffect(() => {
+    // Starts the 10-second timer immediately on every page load
+    const timer = setTimeout(() => {
+      setShowWelcomePopup(true);
+    }, 10000);
+
+    // Cleanup the timer if the user navigates away before 10 seconds
+    return () => clearTimeout(timer);
+  }, []);
+
+  // this useEffect help to track if the pop up is closed so that the download button appears in navbar afterwards
+  const handleClosePopup = () => {
+    console.log("1. Popup closed clicked!");
+    setShowWelcomePopup(false); // Close the UI
+    window.dispatchEvent(new Event("popupClosed")); // Send a signal to the Navbar!
+    console.log("2. Signal sent to window!");
+  };
 
   // =========================================
   // HANDLERS: FILE UPLOAD (DRAG & DROP)
@@ -101,6 +127,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
       // 3. SEND TO BACKEND (The Waiter)
       // Replace with your actual backend URL if different (/uploaid-statement is the FastAPI endpoint we created)
       const response = await fetch(
+        //https://algofinance-api-218961179547.northamerica-northeast1.run.app
         "https://algofinance-api-218961179547.northamerica-northeast1.run.app/api/upload-statement",
         {
           method: "POST",
@@ -114,6 +141,19 @@ export function Hero({ onNavigate }: HeroProps = {}) {
 
       // 4. RECEIVE THE MEAL
       const dashboardData = await response.json();
+      console.log("Success from Backend:", dashboardData);
+
+      // issue: the frontend was sending whole dashboardData to sessionStorage, which included not only the transactions array
+      // but also charts and insights, which caused 422 error (wrong type)
+      // THE FIX: we extract the transactions array from the dashboardData and save it to sessionStorage
+      const transactionsArray = dashboardData.transactions;
+
+      // Now we only save the pure transaction list to memory!
+      sessionStorage.setItem(
+        "financialData",
+        JSON.stringify(transactionsArray),
+      );
+
       console.log("Success from Backend:", dashboardData);
 
       toast.dismiss(); // Clear the loading toast
@@ -160,94 +200,145 @@ export function Hero({ onNavigate }: HeroProps = {}) {
   };
 
   return (
-    <section className="container mx-auto px-4 py-16 md:py-24">
-      <div className="max-w-4xl mx-auto text-center">
-        {/* === PILL BADGE === */}
-        {/* Small highlight element above the main headline */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full mb-6">
-          <Sparkles className="w-4 h-4" />
-          <span className="text-sm">ML-Powered Financial Intelligence</span>
-        </div>
+    // Wrap everything in a relative min-h-screen to ensure proper stacking
+    <div className="relative min-h-screen">
+      {/* === WELCOME POPUP OVERLAY === */}
+      {showWelcomePopup && (
+        <>
+          {/* 1. The Background Overlay (Forced via inline styles) */}
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(17, 24, 39, 0.6)",
+              backdropFilter: "blur(8px)",
+              zIndex: 9998,
+            }}
+          />
 
-        {/* === MAIN HEADLINE === */}
-        <h1 className="mb-6">
-          Gabina, our smart chatbot help you
-          {/* Gradient Text Technique:
-              - bg-gradient-to-r: Sets the gradient colors.
-              - bg-clip-text: Clips the background to the shape of the text.
-              - text-transparent: Makes the text fill invisible so the background shows through.
-          */}
-          <span className="block bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-            Understand your Finances!
-          </span>
-        </h1>
-        {/* Subheadline */}
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Upload your monthly bank statement and let our machine learning
-          algorithms automatically categorize spending, create overview charts,
-          and provide smart insights with Artifical Inteligence.
-        </p>
+          {/* 2. The Pop-up Box (Mathematically centered via inline styles) */}
+          <div
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 9999,
+              width: "90%",
+              maxWidth: "24rem", // 384px (equivalent to max-w-sm)
+            }}
+            className="bg-white rounded-2xl shadow-2xl p-6 flex flex-col animate-in zoom-in-95 duration-300"
+          >
+            {/* Header (Title & X Button) */}
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-xl font-bold text-gray-900 mt-1">
+                Test AlgoFinance!
+              </h3>
+              <button
+                onClick={handleClosePopup}
+                className="text-gray-400 hover:text-red-500 hover:bg-gray-100 p-2 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-        {/* === CTA BUTTONS === */}
-        {/* flex-col sm:flex-row: Vertical stack on mobile, horizontal on desktop */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-          <Button size="lg" className="gap-2" onClick={handleGetStarted}>
-            <Upload className="w-5 h-5" />
-            Start Now
-          </Button>
-        </div>
+            {/* Text Content */}
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+              Curious how AlgoFinance works but don't have a statement handy?
+              Download our safe, sample bank statement to instantly test the
+              dashboard. You can download it from navbar at anytime after
+              closing this popup! Ahmad ❤️
+            </p>
 
-        {/* === INTERACTIVE DEMO AREA (Drop Zone) === */}
-        <div id="file-upload-section" className="relative mt-12">
-          {/* Background Glow Effect:
-              - absolute inset-0: Fills the container.
-              - blur-3xl: Heavily blurs the gradient to create a soft glow.
-              - -z-10: Pushes it behind the content.
-          */}
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 blur-3xl -z-10"></div>
-          {/* The Upload Card */}
-          <div className="bg-white rounded-lg border-2 border-gray-200 shadow-2xl p-8 md:p-12">
-            {/* The Drop Target 
-                - Using a <label> allows clicking anywhere in the box to trigger the hidden file input.
-            */}
-            <label
-              htmlFor="file-upload"
-              // Drag Events to handle state toggling
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleFileUpload}
-              // Conditional Styling:
-              // If dragging file over, turn Green (Emerald).
-              // If idle, stay Gray/White with hover effects.
-              className={`block border-2 border-dashed rounded-lg p-12 transition-all cursor-pointer ${
-                isDragging
-                  ? "border-emerald-400 bg-emerald-50"
-                  : "border-gray-300 bg-gray-50 hover:border-emerald-400 hover:bg-emerald-50/50"
-              }`}
-            >
-              {/* Hidden Input: The actual form element doing the work */}
-              <input
-                id="file-upload"
-                type="file"
-                accept=".csv,.xlsx,.xls,.pdf,.ofx,.qfx" // Restrict to financial formats
-                onChange={handleFileUpload}
-                className="hidden"
-              />
+            {/* Download Button Area */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+              <a
+                href="/SampleBankStatement.pdf"
+                download="SampleBankStatement.pdf"
+                onClick={handleClosePopup}
+                className="w-full" // Ensures the link wrapper takes up the right space
+              >
+                <Button size="lg" className="gap-2 w-full rounded-md shadow-md">
+                  <Download className="w-5 h-5" />
+                  Download Sample
+                </Button>
+              </a>
+            </div>
+          </div>
+        </>
+      )}
 
-              {/* Visual Feedback Icons & Text */}
-              <Upload
-                className={`w-12 h-12 mx-auto mb-4 ${isDragging ? "text-emerald-600" : "text-gray-400"}`}
-              />
-              <p className={isDragging ? "text-emerald-600" : "text-gray-600"}>
-                Drop your bank statement here or click to browse
-              </p>
-              <p className="text-sm text-gray-400 mt-2">
-                Supports Excel, and PDF files from all major banks
-              </p>
-            </label>
+      {/* === ORIGINAL LANDING PAGE CONTENT === */}
+      {/* We keep this exactly the same! */}
+      <section className="container mx-auto px-4 py-16 md:py-24">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full mb-6">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-sm">ML-Powered Financial Intelligence</span>
+          </div>
+
+          <h1 className="mb-6 text-4xl font-bold">
+            Gabina, our smart chatbot help you
+            <span className="block bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              Understand your Finances!
+            </span>
+          </h1>
+
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Upload your monthly bank statement and let our machine learning
+            algorithms automatically categorize spending, create overview
+            charts, and provide smart insights with Artificial Intelligence.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Button size="lg" className="gap-2" onClick={handleGetStarted}>
+              <Upload className="w-5 h-5" />
+              Start Now
+            </Button>
+          </div>
+
+          <div id="file-upload-section" className="relative mt-12">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 blur-3xl -z-10"></div>
+
+            <div className="bg-white rounded-lg border-2 border-gray-200 shadow-2xl p-8 md:p-12">
+              <label
+                htmlFor="file-upload"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleFileUpload}
+                className={`block border-2 border-dashed rounded-lg p-12 transition-all cursor-pointer ${
+                  isDragging
+                    ? "border-emerald-400 bg-emerald-50"
+                    : "border-gray-300 bg-gray-50 hover:border-emerald-400 hover:bg-emerald-50/50"
+                }`}
+              >
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept=".csv,.xlsx,.xls,.pdf,.ofx,.qfx"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+
+                <Upload
+                  className={`w-12 h-12 mx-auto mb-4 ${isDragging ? "text-emerald-600" : "text-gray-400"}`}
+                />
+                <p
+                  className={isDragging ? "text-emerald-600" : "text-gray-600"}
+                >
+                  Drop your bank statement here or click to browse
+                </p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Supports Excel, and PDF files from all major banks
+                </p>
+              </label>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

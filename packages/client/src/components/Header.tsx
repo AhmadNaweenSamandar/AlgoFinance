@@ -1,7 +1,8 @@
-import { Menu } from "lucide-react";
-import { useState } from "react";
+import { Download, Menu } from "lucide-react";
+import { useEffect, useState } from "react";
 //THE FIX (Step 1): Import the actual file from assets folder!
 import algoFinanceLogo from "../assets/algo.jpg";
+import { Button } from "./ui/button";
 
 //header interface created
 //contains two variables handling whether user navigate adertising pages
@@ -22,6 +23,35 @@ export function Header({ onNavigate }: HeaderProps) {
 
   // Controls visibility of the mobile slide-down menu
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // =========================================
+  // State to receive signal from Hero that pop up is closed
+  // and to show the "Download Sample Statement" button in the header
+  // =========================================
+  // 1. State to control the button visibility
+  const [showSampleBtn, setShowSampleBtn] = useState(false);
+
+  // 2. Listen for the signal or check memory on load
+  useEffect(() => {
+    console.log(
+      "Header loaded. Storage check:",
+      localStorage.getItem("hasSeenPopup"),
+    );
+    // If they refresh the page after already closing the popup, show it immediately
+    if (localStorage.getItem("hasSeenPopup")) {
+      setShowSampleBtn(true);
+    }
+
+    // Listen for the exact moment the Landing Page fires the "popupClosed" signal
+    const handleSignal = () => {
+      console.log("3. Signal received by Header!");
+      setShowSampleBtn(true);
+    };
+    window.addEventListener("popupClosed", handleSignal);
+
+    // Cleanup the listener
+    return () => window.removeEventListener("popupClosed", handleSignal);
+  }, []);
 
   // =========================================
   // Handlers
@@ -57,11 +87,11 @@ export function Header({ onNavigate }: HeaderProps) {
           {/* Logo Icon Container */}
           {/* THE FIX (Step 2): Added overflow-hidden to maintain rounded corner mask */}
           <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white p-0.5 shadow-inner">
-            <img 
+            <img
               src={algoFinanceLogo} // The imported variable from Step 1
               alt="AlgoFinance Logo"
               // THE FIX (Step 3): 'object-contain' forces logo to fit perfectly within the 32px box without cropping or stretching
-              className="max-w-full max-h-full object-contain" 
+              className="max-w-full max-h-full object-contain"
             />
           </div>
 
@@ -75,6 +105,19 @@ export function Header({ onNavigate }: HeaderProps) {
                     - Desktop: Visible (display: flex) to show links horizontally. 
                 */}
         <nav className="hidden md:flex items-center gap-6">
+          {/* THE NEW DESKTOP BUTTON */}
+          {showSampleBtn && (
+            <a
+              href="/SampleBankStatement.pdf"
+              download="SampleBankStatement.pdf"
+              className="animate-in fade-in duration-500"
+            >
+              <Button variant="outline" size="sm" className="gap-2 rounded-md">
+                <Download className="w-4 h-4" />
+                Sample Statement
+              </Button>
+            </a>
+          )}
           <button
             onClick={() => handleNavClick("about")}
             className="text-gray-600 hover:text-gray-900 transition-colors"
@@ -103,6 +146,23 @@ export function Header({ onNavigate }: HeaderProps) {
                     - border-t: Adds visual separation from the main header bar.
                 */}
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+            {/* THE NEW MOBILE BUTTON */}
+            {showSampleBtn && (
+              <a
+                href="/SampleBankStatement.pdf"
+                download="SampleBankStatement.pdf"
+                className="animate-in fade-in duration-500"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 rounded-md"
+                >
+                  <Download className="w-4 h-4" />
+                  Sample Statement
+                </Button>
+              </a>
+            )}
             {/* Navigation Links (Vertical Stack) */}
             <button
               onClick={() => handleNavClick("about")}

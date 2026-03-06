@@ -8,13 +8,13 @@ from src.services.pdf_parser import extract_data_from_file
 from src.services.analytics import generate_dashboard_data
 from src.services.normalizer import normalize_financial_data
 from src.services.ml_model import predict_categories
-from src.services.chat_services import process_data_for_chat
 from src.services.chat_services import ask_financial_question
 
 
 # Schema for the question
 class ChatRequest(BaseModel):
     question: str
+    financial_context: list  # React sends the sessionStorage data here
 
 
 def recursive_clean(obj):
@@ -97,7 +97,7 @@ async def chat_with_finance(request: ChatRequest):
     Endpoint for the Chat Interface.
     """
     try:  # <--- Indentation fixed here
-        answer = ask_financial_question(request.question)
+        answer = ask_financial_question(request.question, request.financial_context)
         return {"answer": answer}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

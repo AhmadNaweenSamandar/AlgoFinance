@@ -42,7 +42,7 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
         ],
         "Benefits": [
             "gst canada",
-            "prov/localgvtpayment",
+            "prov/local gst payment",
             "benefit",
         ],
         "Dinning": [
@@ -73,7 +73,13 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
             "enbridge",
             "enercare",
         ],
-        "Loans": ["loanpayment", "studentloan", "student loan", "mortgage"],
+        "Loans": [
+            "loan payment",
+            "studentloan",
+            "student loan",
+            "mortgage",
+            "loan canada gvt",
+        ],
         "Entertainment": [
             "netflix",
             "spotify",
@@ -91,6 +97,8 @@ def predict_categories(df: pd.DataFrame) -> pd.DataFrame:
             "onlinebankingtransfer",
             "withdrawal",
             "e-transfer received",
+            "e-transfer sent",
+            "online banking transfer",
         ],
         "Cash": ["atm", "cash"],
     }

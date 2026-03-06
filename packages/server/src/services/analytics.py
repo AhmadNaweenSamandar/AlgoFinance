@@ -40,7 +40,7 @@ def generate_dashboard_data(df: pd.DataFrame):
         "Utilities": "#eab308",  # Yellow
         "Loans": "#ef4444",  # Red
         "Entertainment": "#a855f7",  # Purple
-        "Transfer": "#8c12b8",  # violet
+        "Transfers": "#069ea3",  # violet
         "Dining": "#BD0019",  # DarkRed
         "Shopping": "#8B008B",  # DarkMagenta
         "Health": "#3b82f6",  # Blue
@@ -75,7 +75,7 @@ def generate_dashboard_data(df: pd.DataFrame):
     # --- SECTION 4: INSIGHTS (The Colorful Squares) ---
     insights = []
 
-# Insight 1: Saving Rate (UPGRADED)
+    # Insight 1: Saving Rate (UPGRADED)
     saving_rate = (net_saving / total_income * 100) if total_income > 0 else 0
     if saving_rate > 20:
         insights.append(
@@ -108,8 +108,8 @@ def generate_dashboard_data(df: pd.DataFrame):
     # Insight 2: Top Expense Category (UPGRADED)
     if overview_list:
         top_cat = overview_list[0]["category"]
-        top_amount = overview_list[0].get("amount", 0) 
-        
+        top_amount = overview_list[0].get("amount", 0)
+
         insights.append(
             {
                 "title": "Primary Expenditure",
@@ -123,7 +123,7 @@ def generate_dashboard_data(df: pd.DataFrame):
     # Dynamically sets a goal to save 20% of the month's total income
     if total_income > 0:
         target_saving = total_income * 0.20
-        
+
         if net_saving >= target_saving:
             # They hit or exceeded the 20% goal
             insights.append(
