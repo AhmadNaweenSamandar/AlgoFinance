@@ -17,6 +17,8 @@ origins = [
     "http://127.0.0.1:5173",
     "https://algofinance-frontend.web.app",  # Firebase frontend link
     "https://algofinance-frontend.firebaseapp.com",  # Firebase frontend backup link
+    "https://algofinance.ca" # The custom domain for the frontend
+
 ]
 
 app.add_middleware(
